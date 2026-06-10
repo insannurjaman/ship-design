@@ -39,9 +39,9 @@ export function AppShell({
             <div className="border border-line bg-surface-base p-4">
               <p className="font-mono text-xs uppercase text-ink-muted">System</p>
               <div className="mt-3 flex items-center justify-between gap-3">
-                <span className="text-sm text-ink-secondary">Mock pipeline</span>
-                <StatusPill tone="running" pulse>
-                  Live
+                <span className="text-sm text-ink-secondary">Generation mode</span>
+                <StatusPill tone="info">
+                  Local
                 </StatusPill>
               </div>
             </div>
@@ -62,7 +62,7 @@ export function AppShell({
                 ) : null}
               </div>
               <div className="flex flex-wrap items-center gap-3">
-                <Badge tone="accent">Mock data</Badge>
+                <Badge tone="accent">Local mode</Badge>
                 {actions}
               </div>
             </div>

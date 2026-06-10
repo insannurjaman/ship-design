@@ -49,10 +49,16 @@ Oxide can be used as inspiration for atmosphere and technical restraint, but the
 - [Quality Checklist](./docs/07-quality-checklist.md)
 - [Landing Page Strategy](./docs/08-landing-page-strategy.md)
 - [MVP Roadmap](./docs/09-mvp-roadmap.md)
+- [Real AI Generation Architecture](./docs/10-real-ai-generation-architecture.md)
 
 ## Current Phase
 
-Project brain only.
+Ship Design currently has:
 
-No production UI, application code, or implementation details should be created until the documentation foundation is reviewed and accepted.
+- Product and agent documentation
+- A Next.js app foundation
+- A local mock generation workflow
+- A token-based dark technical UI direction
+- A real AI generation architecture plan
 
+Real AI generation, authentication, payments, persistent database storage, and live Figma API writes are intentionally not connected yet.

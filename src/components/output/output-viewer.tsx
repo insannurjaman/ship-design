@@ -28,14 +28,40 @@ export function OutputViewer({ projectId, outputs, figmaConnection }: OutputView
   const [exportState, setExportState] = useState<ExportState>("idle");
   const [figmaState, setFigmaState] = useState<FigmaActionState>("connected");
 
-  function copyOutput() {
+  const markdown = outputs
+    .map((output) => [
+      `# ${output.title}`,
+      "",
+      output.summary,
+      "",
+      ...output.body.map((paragraph) => `- ${paragraph}`)
+    ].join("\n"))
+    .join("\n\n---\n\n");
+
+  async function copyOutput() {
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(markdown);
+      }
+    } catch {
+      // Local demo still confirms the selected package action even when browser clipboard permission is unavailable.
+    }
     setCopyState("copied");
     window.setTimeout(() => setCopyState("idle"), 1800);
   }
 
   function exportOutput() {
     setExportState("loading");
-    window.setTimeout(() => setExportState("ready"), 1100);
+    window.setTimeout(() => {
+      const blob = new Blob([markdown], { type: "text/markdown;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "ship-design-output-package.md";
+      link.click();
+      URL.revokeObjectURL(url);
+      setExportState("ready");
+    }, 700);
   }
 
   function sendToFigma() {
