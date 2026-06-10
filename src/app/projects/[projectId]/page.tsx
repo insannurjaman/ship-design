@@ -1,22 +1,71 @@
 import { AgentWorkflowSimulation } from "@/components/agent/agent-workflow-simulation";
 import { AppShell } from "@/components/layout/app-shell";
+import { StatePanel } from "@/components/layout/state-panel";
 import { Button } from "@/components/ui/button";
-import { mockActivityLogs, mockAgentRuns, mockOutputs, mockProjects } from "@/lib/mock-data";
+import { getGenerationRun } from "@/lib/generation/run-store";
+import {
+  mockActivityLogs,
+  mockAgentRuns,
+  mockOutputs,
+  mockProjects,
+  type ActivityLog,
+  type AgentRun,
+  type Project
+} from "@/lib/mock-data";
+import type { GenerationRun } from "@/lib/generation/progress";
 import { redirect } from "next/navigation";
 
 type ProjectPageProps = {
   params: Promise<{ projectId: string }>;
-  searchParams: Promise<{ run?: string; step?: string }>;
+  searchParams: Promise<{ generationRunId?: string; run?: string; step?: string }>;
 };
 
 export default async function ProjectPage({ params, searchParams }: ProjectPageProps) {
   const { projectId } = await params;
-  const { run, step } = await searchParams;
+  const { generationRunId, run, step } = await searchParams;
   const project = mockProjects.find((item) => item.id === projectId) ?? mockProjects[0];
   const shouldRun = run === "mock";
 
   if (step) {
     redirect(shouldRun ? `/projects/${project.id}?run=mock` : `/projects/${project.id}`);
+  }
+
+  if (generationRunId) {
+    const generationRun = getGenerationRun(generationRunId);
+
+    if (!generationRun) {
+      return <GenerationRunNotFound runId={generationRunId} />;
+    }
+
+    const generatedProject = createProjectFromRun(generationRun);
+    const outputViewerHref = `/projects/generated/outputs?generationRunId=${encodeURIComponent(generationRun.id)}`;
+
+    return (
+      <AppShell
+        title="Agent Workflow Progress"
+        eyebrow={generatedProject.name}
+        description={generatedProject.goal}
+        actions={
+          <Button href={outputViewerHref} variant="primary">
+            Open Output Viewer
+          </Button>
+        }
+      >
+        <AgentWorkflowSimulation
+          project={generatedProject}
+          agents={createAgentsFromRun(generationRun)}
+          outputs={generationRun.artifacts}
+          logs={createLogsFromRun(generationRun)}
+          outputViewerHref={outputViewerHref}
+          runInfo={{
+            provider: generationRun.provider,
+            model: generationRun.model,
+            mode: generationRun.mode,
+            warnings: generationRun.warnings
+          }}
+        />
+      </AppShell>
+    );
   }
 
   return (
@@ -39,4 +88,70 @@ export default async function ProjectPage({ params, searchParams }: ProjectPageP
       />
     </AppShell>
   );
+}
+
+function GenerationRunNotFound({ runId }: { runId: string }) {
+  return (
+    <AppShell
+      title="Generation Run Not Found"
+      eyebrow="Recovery"
+      description="Ship Design could not find this in-memory generation run. It may have expired after a server restart or refresh."
+    >
+      <StatePanel
+        tone="danger"
+        label="Missing run"
+        title="Generation run not found"
+        description={`No generation run exists for ${runId}. Start a new package, try the generation again, or open the mock demo.`}
+        action={
+          <div className="flex flex-wrap gap-3">
+            <Button href="/projects/new" variant="primary">
+              Back to New Project
+            </Button>
+            <Button href="/projects/new" variant="secondary">
+              Try again
+            </Button>
+            <Button href="/projects/project-forge?run=mock" variant="secondary">
+              Open mock demo
+            </Button>
+          </div>
+        }
+      />
+    </AppShell>
+  );
+}
+
+function createProjectFromRun(run: GenerationRun): Project {
+  return {
+    id: "generated",
+    name: run.input.productName,
+    idea: run.input.mainProblem,
+    type: run.input.productType,
+    targetUsers: run.input.targetUsers,
+    goal: run.input.productGoal,
+    status: "ready",
+    updatedAt: "Just now",
+    outputs: run.artifacts.length,
+    progress: run.progress
+  };
+}
+
+function createAgentsFromRun(run: GenerationRun): AgentRun[] {
+  return run.steps.map((step) => ({
+    id: step.id,
+    name: `${step.title} Agent`,
+    status: step.status,
+    output: step.title,
+    description: `Generated ${step.title} for ${run.input.productName}.`,
+    progress: step.progress
+  }));
+}
+
+function createLogsFromRun(run: GenerationRun): ActivityLog[] {
+  return run.steps.map((step, index) => ({
+    id: step.id,
+    time: index === 0 ? "Now" : `+${index + 1}m`,
+    label: step.title,
+    message: `${step.title} completed using ${run.provider} (${run.mode}) with ${run.model}.`,
+    tone: step.status === "error" ? "danger" : "success"
+  }));
 }

@@ -18,6 +18,13 @@ type AgentWorkflowSimulationProps = {
   outputs: OutputArtifact[];
   logs: ActivityLogItem[];
   shouldRun?: boolean;
+  outputViewerHref?: string;
+  runInfo?: {
+    provider: string;
+    model: string;
+    mode: "mock" | "real";
+    warnings?: string[];
+  };
 };
 
 const stepMessages = [
@@ -35,7 +42,9 @@ export function AgentWorkflowSimulation({
   agents,
   outputs,
   logs,
-  shouldRun = false
+  shouldRun = false,
+  outputViewerHref,
+  runInfo
 }: AgentWorkflowSimulationProps) {
   const [progress, setProgress] = useState(shouldRun ? 0 : 100);
 
@@ -64,14 +73,18 @@ export function AgentWorkflowSimulation({
   const generatedOutputs = isComplete ? outputs.length : Math.floor((progress / 100) * outputs.length);
   const visibleLogs = Math.max(1, Math.ceil((progress / 100) * logs.length));
   const hasRecoveredWarning = progress >= 44 && progress < 62;
+  const viewerHref = outputViewerHref ?? `/projects/${project.id}/outputs?generated=1`;
+  const runWarnings = runInfo?.warnings ?? [];
 
   const message = useMemo(() => {
     if (isComplete) {
-      return "Ship Design finished the local mock pipeline. Review, export, or send the generated package to Figma.";
+      return runInfo
+        ? "Ship Design finished this generation run. Review the generated artifacts, provider details, and output package."
+        : "Ship Design finished the local mock pipeline. Review, export, or send the generated package to Figma.";
     }
 
     return stepMessages[Math.min(runningIndex, stepMessages.length - 1)];
-  }, [isComplete, runningIndex]);
+  }, [isComplete, runningIndex, runInfo]);
 
   function getAgentState(index: number) {
     if (index < completedAgents || isComplete) return "complete";
@@ -102,11 +115,19 @@ export function AgentWorkflowSimulation({
                   {isComplete ? "Complete" : "Running"}
                 </StatusPill>
                 <StatusPill tone={hasRecoveredWarning ? "warning" : "info"}>
-                  {hasRecoveredWarning ? "Recovered warning" : "Local mock"}
+                  {hasRecoveredWarning ? "Recovered warning" : runInfo ? `Provider ${runInfo.provider}` : "Local mock"}
                 </StatusPill>
+                {runInfo ? (
+                  <>
+                    <StatusPill tone={runInfo.mode === "real" ? "complete" : "info"}>
+                      Mode {runInfo.mode}
+                    </StatusPill>
+                    <StatusPill tone="info">Model {runInfo.model}</StatusPill>
+                  </>
+                ) : null}
               </div>
               {isComplete ? (
-                <Button href={`/projects/${project.id}/outputs?generated=1`} variant="primary" className="mt-6">
+                <Button href={viewerHref} variant="primary" className="mt-6">
                   Open Output Viewer
                 </Button>
               ) : null}
@@ -158,7 +179,7 @@ export function AgentWorkflowSimulation({
                 Generated output preview
               </h2>
               <Button
-                href={`/projects/${project.id}/outputs?generated=1`}
+                href={viewerHref}
                 size="sm"
                 variant={isComplete ? "primary" : "secondary"}
               >
@@ -187,10 +208,22 @@ export function AgentWorkflowSimulation({
           title={isComplete ? "Artifacts saved locally" : "Local generation active"}
           description={
             isComplete
-              ? "The generated package is ready for review. No backend, API, or database was used."
+              ? runInfo
+                ? `Run stored in memory. Provider: ${runInfo.provider}. Mode: ${runInfo.mode}. Model: ${runInfo.model}.`
+                : "The generated package is ready for review. No backend, API, or database was used."
               : "This demo uses local mock timing so the team can review the product flow before real AI integration."
           }
         />
+
+        {runWarnings.map((warning) => (
+          <StatePanel
+            key={warning}
+            tone="warning"
+            label="Provider warning"
+            title="Generation used fallback behavior"
+            description={warning}
+          />
+        ))}
 
         {hasRecoveredWarning ? (
           <StatePanel

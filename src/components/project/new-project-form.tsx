@@ -91,12 +91,12 @@ export function NewProjectForm() {
       if (warning) {
         setWarningMessage(warning);
         window.setTimeout(() => {
-          router.push(`/projects/project-forge?run=mock&generationRunId=${encodeURIComponent(payload.id)}`);
+          router.push(`/projects/generated?generationRunId=${encodeURIComponent(payload.id)}`);
         }, 900);
         return;
       }
 
-      router.push(`/projects/project-forge?run=mock&generationRunId=${encodeURIComponent(payload.id)}`);
+      router.push(`/projects/generated?generationRunId=${encodeURIComponent(payload.id)}`);
     } catch {
       setErrorMessage("Could not create the generation run. Check the intake and try again.");
       setIsGenerating(false);

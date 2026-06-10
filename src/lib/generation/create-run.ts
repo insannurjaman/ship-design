@@ -13,8 +13,7 @@ import {
   type GenerationArtifact,
   type GenerationRun
 } from "@/lib/generation/progress";
-
-const generationRuns = new Map<string, GenerationRun>();
+import { saveGenerationRun } from "@/lib/generation/run-store";
 
 export async function createGenerationRun(input: CreateGenerationRunRequest): Promise<GenerationRun> {
   const runId = createRunId();
@@ -65,13 +64,7 @@ export async function createGenerationRun(input: CreateGenerationRunRequest): Pr
     warnings
   };
 
-  generationRuns.set(run.id, run);
-
-  return run;
-}
-
-export function getGenerationRun(runId: string) {
-  return generationRuns.get(runId);
+  return saveGenerationRun(run);
 }
 
 function createRunId() {

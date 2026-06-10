@@ -12,18 +12,38 @@ import type { OutputArtifact } from "@/lib/mock-data";
 
 type FigmaActionState = "connected" | "syncing" | "sent" | "error";
 type ExportState = "idle" | "loading" | "ready";
+type ViewerOutputArtifact = OutputArtifact & {
+  markdown?: string;
+  provider?: string;
+  model?: string;
+  mode?: "mock" | "real";
+  warnings?: string[];
+};
 
 type OutputViewerProps = {
   projectId: string;
-  outputs: OutputArtifact[];
+  outputs: ViewerOutputArtifact[];
   figmaConnection: {
     workspace: string;
     file: string;
     lastSync: string;
   };
+  runInfo?: {
+    provider: string;
+    model: string;
+    mode: "mock" | "real";
+    warnings?: string[];
+  };
+  regenerateHref?: string;
 };
 
-export function OutputViewer({ projectId, outputs, figmaConnection }: OutputViewerProps) {
+export function OutputViewer({
+  projectId,
+  outputs,
+  figmaConnection,
+  runInfo,
+  regenerateHref
+}: OutputViewerProps) {
   const [copyState, setCopyState] = useState<"idle" | "copied">("idle");
   const [exportState, setExportState] = useState<ExportState>("idle");
   const [figmaState, setFigmaState] = useState<FigmaActionState>("connected");
@@ -34,7 +54,7 @@ export function OutputViewer({ projectId, outputs, figmaConnection }: OutputView
       "",
       output.summary,
       "",
-      ...output.body.map((paragraph) => `- ${paragraph}`)
+      output.markdown ?? output.body.map((paragraph) => `- ${paragraph}`).join("\n")
     ].join("\n"))
     .join("\n\n---\n\n");
 
@@ -136,6 +156,17 @@ export function OutputViewer({ projectId, outputs, figmaConnection }: OutputView
               </div>
             </div>
             <div className="mt-4 flex flex-wrap gap-2" aria-live="polite">
+              {runInfo ? (
+                <>
+                  <StatusPill tone={runInfo.provider === "mock" ? "info" : "complete"}>
+                    Provider {runInfo.provider}
+                  </StatusPill>
+                  <StatusPill tone={runInfo.mode === "real" ? "complete" : "info"}>
+                    Mode {runInfo.mode}
+                  </StatusPill>
+                  <StatusPill tone="info">Model {runInfo.model}</StatusPill>
+                </>
+              ) : null}
               {copyState === "copied" ? <StatusPill tone="complete">Copied to clipboard</StatusPill> : null}
               {exportState === "loading" ? <StatusPill tone="running" pulse>Preparing export</StatusPill> : null}
               {exportState === "ready" ? <StatusPill tone="complete">Export ready</StatusPill> : null}
@@ -144,7 +175,7 @@ export function OutputViewer({ projectId, outputs, figmaConnection }: OutputView
             </div>
           </CardHeader>
           <CardBody>
-            <Tabs items={items} defaultValue="brief" />
+            <Tabs items={items} defaultValue={outputs[0]?.id} />
           </CardBody>
         </Card>
       </main>
@@ -172,12 +203,21 @@ export function OutputViewer({ projectId, outputs, figmaConnection }: OutputView
           </CardBody>
         </Card>
 
+        {runInfo?.warnings?.map((warning) => (
+          <Card key={warning} className="border-status-warning/60">
+            <CardBody>
+              <Badge tone="warning">Provider warning</Badge>
+              <p className="mt-3 text-sm leading-6 text-ink-secondary">{warning}</p>
+            </CardBody>
+          </Card>
+        ))}
+
         <EmptyState
           title="No reviewer comments"
           description="Comments will appear here once collaboration and auth are added."
         />
 
-        <Button href={`/projects/${projectId}?run=mock`} variant="secondary">
+        <Button href={regenerateHref ?? `/projects/${projectId}?run=mock`} variant="secondary">
           Regenerate section
         </Button>
       </aside>
