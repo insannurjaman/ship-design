@@ -21,9 +21,9 @@ export function AppShell({
 }: AppShellProps) {
   return (
     <div className="min-h-screen bg-surface-base text-ink-primary">
-      <div className="grid min-h-screen grid-cols-1 lg:grid-cols-[260px_1fr]">
-        <aside className="border-b border-line bg-surface-panel/95 lg:border-b-0 lg:border-r">
-          <div className="border-b border-line p-5">
+      <div className="grid min-h-screen grid-cols-1 lg:grid-cols-[260px_minmax(0,1fr)]">
+        <aside className="border-b border-line bg-surface-panel/95 lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col lg:overflow-y-auto lg:border-b-0 lg:border-r">
+          <div className="shrink-0 border-b border-line p-5">
             <div className="flex items-center justify-between gap-4">
               <Link href="/" className="font-mono text-sm uppercase text-accent-green">
                 {APP_NAME}
@@ -35,7 +35,7 @@ export function AppShell({
             </p>
           </div>
           <AppNav />
-          <div className="hidden border-t border-line p-4 lg:block">
+          <div className="hidden shrink-0 border-t border-line p-4 lg:mt-auto lg:block">
             <div className="border border-line bg-surface-base p-4">
               <p className="font-mono text-xs uppercase text-ink-muted">System</p>
               <div className="mt-3 flex items-center justify-between gap-3">
@@ -47,7 +47,7 @@ export function AppShell({
             </div>
           </div>
         </aside>
-        <main className="min-w-0">
+        <main className="min-w-0 overflow-x-hidden">
           <header className="border-b border-line bg-surface-base/95 px-4 py-5 sm:px-6">
             <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
               <div>

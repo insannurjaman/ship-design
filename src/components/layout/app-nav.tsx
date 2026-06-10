@@ -9,10 +9,9 @@ export function AppNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="grid gap-1 border-b border-line p-3 lg:border-b-0" aria-label="Primary">
+    <nav className="grid gap-1 border-b border-line p-3 lg:flex-1 lg:content-start lg:border-b-0" aria-label="Primary">
       {NAV_ITEMS.map((item) => {
-        const isActive =
-          item.href === "/dashboard" ? pathname === item.href : pathname.startsWith(item.href);
+        const isActive = isActiveNavItem(pathname, item.href);
 
         return (
           <Link
@@ -32,4 +31,12 @@ export function AppNav() {
       })}
     </nav>
   );
+}
+
+function isActiveNavItem(pathname: string, href: string) {
+  if (href === "/projects") {
+    return pathname === "/projects" || (pathname.startsWith("/projects/") && pathname !== "/projects/new");
+  }
+
+  return pathname === href;
 }
