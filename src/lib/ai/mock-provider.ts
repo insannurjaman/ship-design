@@ -1,7 +1,7 @@
 import "server-only";
 
 import type { AiGenerateResponse, AiProvider, AiProviderConfig } from "./types";
-import { joinMessagesForPrompt } from "./providers";
+import { joinMessagesForPrompt, resolveRequestModel } from "./providers";
 
 export function createMockProvider(config: AiProviderConfig): AiProvider {
   return {
@@ -13,7 +13,8 @@ export function createMockProvider(config: AiProviderConfig): AiProvider {
 
       return {
         provider: "mock",
-        model: request.model ?? config.defaultModel,
+        model: resolveRequestModel(request, config),
+        mode: "mock",
         text: [
           "# Mock Ship Design Output",
           "",

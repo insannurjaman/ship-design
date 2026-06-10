@@ -33,19 +33,30 @@ export function getSelectedAiProvider() {
 }
 
 export async function generateAiText(request: AiGenerateRequest): Promise<AiGenerateResponse> {
-  const { provider, fallbackWarning } = getSelectedAiProvider();
-  const response = await provider.generate(request);
+  const { mode, provider, fallbackWarning } = getSelectedAiProvider();
 
-  return {
-    ...response,
-    warnings: fallbackWarning
-      ? [
-          ...response.warnings,
-          {
-            code: "fallback_to_mock",
-            message: fallbackWarning
-          }
-        ]
-      : response.warnings
-  };
+  try {
+    const response = await provider.generate(request);
+
+    return {
+      ...response,
+      warnings: fallbackWarning ? [...response.warnings, fallbackWarning] : response.warnings
+    };
+  } catch (error) {
+    if (mode !== "real" || provider.id === "mock") {
+      throw error;
+    }
+
+    const providers = createProviders();
+    const fallback = await providers.mock.generate(request);
+    const message = error instanceof Error ? error.message : "Unknown provider error.";
+
+    return {
+      ...fallback,
+      warnings: [
+        ...fallback.warnings,
+        `${provider.displayName} failed during real AI generation. Ship Design fell back to mock generation. ${message}`
+      ]
+    };
+  }
 }

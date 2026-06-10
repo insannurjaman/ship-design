@@ -2,7 +2,7 @@ import "server-only";
 
 import type { AiGenerateResponse, AiProvider, AiProviderConfig } from "./types";
 import { createProviderResponseError } from "./errors";
-import { fetchJson, normalizeOpenAiUsage, splitSystemAndChatMessages } from "./providers";
+import { fetchJson, normalizeOpenAiUsage, resolveRequestModel, splitSystemAndChatMessages } from "./providers";
 
 type HuggingFaceResponse = {
   choices?: Array<{
@@ -26,7 +26,7 @@ export function createHuggingFaceProvider(config: AiProviderConfig): AiProvider 
         });
       }
 
-      const model = request.model ?? config.defaultModel;
+      const model = resolveRequestModel(request, config);
       const { system, messages } = splitSystemAndChatMessages(request);
       const json = (await fetchJson({
         provider: "huggingface",
@@ -60,6 +60,7 @@ export function createHuggingFaceProvider(config: AiProviderConfig): AiProvider 
       return {
         provider: "huggingface",
         model,
+        mode: "real",
         text,
         raw: json,
         usage: normalizeOpenAiUsage(json.usage),

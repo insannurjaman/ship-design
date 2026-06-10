@@ -2,7 +2,7 @@ import "server-only";
 
 import type { AiGenerateResponse, AiProvider, AiProviderConfig } from "./types";
 import { createProviderResponseError } from "./errors";
-import { fetchJson, normalizeOpenAiUsage, splitSystemAndChatMessages } from "./providers";
+import { fetchJson, normalizeOpenAiUsage, resolveRequestModel, splitSystemAndChatMessages } from "./providers";
 
 type OpenRouterResponse = {
   choices?: Array<{
@@ -26,7 +26,7 @@ export function createOpenRouterProvider(config: AiProviderConfig): AiProvider {
         });
       }
 
-      const model = request.model ?? config.defaultModel;
+      const model = resolveRequestModel(request, config);
       const { system, messages } = splitSystemAndChatMessages(request);
       const json = (await fetchJson({
         provider: "openrouter",
@@ -62,6 +62,7 @@ export function createOpenRouterProvider(config: AiProviderConfig): AiProvider {
       return {
         provider: "openrouter",
         model,
+        mode: "real",
         text,
         raw: json,
         usage: normalizeOpenAiUsage(json.usage),

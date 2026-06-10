@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { AiGenerationMode, AiProviderConfig, AiProviderId } from "./types";
+import type { AiGenerationMode, AiModelTier, AiProviderConfig, AiProviderId } from "./types";
 
 export const AI_PROVIDER_PRIORITY: AiProviderId[] = [
   "mock",
@@ -22,17 +22,40 @@ function readMode(): AiGenerationMode {
 }
 
 function readTimeoutMs() {
-  const parsed = Number.parseInt(process.env.AI_REQUEST_TIMEOUT_MS ?? "60000", 10);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : 60000;
+  const parsed = Number.parseInt(process.env.AI_REQUEST_TIMEOUT_MS ?? "45000", 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 45000;
+}
+
+function readSelectedProvider(): Exclude<AiProviderId, "mock"> {
+  const value = process.env.AI_PROVIDER;
+
+  if (value === "gemini" || value === "groq" || value === "openrouter" || value === "huggingface") {
+    return value;
+  }
+
+  return "gemini";
+}
+
+function providerModels(models: Partial<Record<AiModelTier, string>>, fallback: string): Record<AiModelTier, string> {
+  const defaultModel = models.default || fallback;
+
+  return {
+    fast: models.fast || defaultModel,
+    default: defaultModel,
+    reasoning: models.reasoning || defaultModel
+  };
 }
 
 function providerConfig(id: AiProviderId, overrides: Partial<AiProviderConfig>): AiProviderConfig {
+  const models = overrides.models ?? providerModels({ default: overrides.defaultModel }, "mock-ship-design");
+
   return {
     id,
     displayName: overrides.displayName ?? id,
     apiKey: overrides.apiKey,
     baseUrl: overrides.baseUrl ?? "",
-    defaultModel: overrides.defaultModel ?? "mock-ship-design",
+    models,
+    defaultModel: overrides.defaultModel ?? models.default,
     timeoutMs: overrides.timeoutMs ?? readTimeoutMs()
   };
 }
@@ -45,35 +68,61 @@ export function getAiGatewayConfig(): AiGatewayConfig {
     mock: providerConfig("mock", {
       displayName: "Mock",
       baseUrl: "local://mock",
-      defaultModel: "mock-ship-design",
+      models: providerModels({ default: "mock-ship-design" }, "mock-ship-design"),
       timeoutMs
     }),
     gemini: providerConfig("gemini", {
       displayName: "Google Gemini",
       apiKey: process.env.GEMINI_API_KEY ?? process.env.GOOGLE_AI_API_KEY,
       baseUrl: "https://generativelanguage.googleapis.com/v1beta",
-      defaultModel: process.env.GEMINI_MODEL ?? "gemini-1.5-flash",
+      models: providerModels(
+        {
+          fast: process.env.GEMINI_FAST_MODEL,
+          default: process.env.GEMINI_DEFAULT_MODEL ?? process.env.GEMINI_MODEL,
+          reasoning: process.env.GEMINI_REASONING_MODEL
+        },
+        "gemini-2.5-flash"
+      ),
       timeoutMs
     }),
     groq: providerConfig("groq", {
       displayName: "Groq",
       apiKey: process.env.GROQ_API_KEY,
       baseUrl: "https://api.groq.com/openai/v1",
-      defaultModel: process.env.GROQ_MODEL ?? "llama-3.1-8b-instant",
+      models: providerModels(
+        {
+          fast: process.env.GROQ_FAST_MODEL,
+          default: process.env.GROQ_DEFAULT_MODEL ?? process.env.GROQ_MODEL,
+          reasoning: process.env.GROQ_REASONING_MODEL
+        },
+        "llama-3.1-8b-instant"
+      ),
       timeoutMs
     }),
     openrouter: providerConfig("openrouter", {
       displayName: "OpenRouter",
       apiKey: process.env.OPENROUTER_API_KEY,
       baseUrl: "https://openrouter.ai/api/v1",
-      defaultModel: process.env.OPENROUTER_MODEL ?? "google/gemini-2.0-flash-exp:free",
+      models: providerModels(
+        {
+          fast: process.env.OPENROUTER_FAST_MODEL,
+          default: process.env.OPENROUTER_DEFAULT_MODEL ?? process.env.OPENROUTER_MODEL,
+          reasoning: process.env.OPENROUTER_REASONING_MODEL
+        },
+        "openrouter/free"
+      ),
       timeoutMs
     }),
     huggingface: providerConfig("huggingface", {
       displayName: "Hugging Face",
       apiKey: process.env.HUGGINGFACE_API_KEY ?? process.env.HF_TOKEN,
       baseUrl: "https://router.huggingface.co/v1",
-      defaultModel: process.env.HUGGINGFACE_MODEL ?? "meta-llama/Llama-3.1-8B-Instruct",
+      models: providerModels(
+        {
+          default: process.env.HF_DEFAULT_MODEL ?? process.env.HUGGINGFACE_MODEL
+        },
+        "meta-llama/Llama-3.1-8B-Instruct"
+      ),
       timeoutMs
     })
   };
@@ -86,8 +135,9 @@ export function getAiGatewayConfig(): AiGatewayConfig {
     };
   }
 
-  const selectedProvider =
-    AI_PROVIDER_PRIORITY.find((id) => id !== "mock" && Boolean(providerConfigs[id].apiKey)) ?? "mock";
+  const requestedProvider = readSelectedProvider();
+  const hasApiKey = Boolean(providerConfigs[requestedProvider].apiKey);
+  const selectedProvider = hasApiKey ? requestedProvider : "mock";
 
   return {
     mode,
@@ -95,7 +145,7 @@ export function getAiGatewayConfig(): AiGatewayConfig {
     providerConfigs,
     fallbackWarning:
       selectedProvider === "mock"
-        ? "Real AI mode is enabled, but no configured provider API key was found. Ship Design fell back to mock generation."
+        ? `Real AI mode is enabled for ${requestedProvider}, but its API key is missing. Ship Design fell back to mock generation.`
         : undefined
   };
 }

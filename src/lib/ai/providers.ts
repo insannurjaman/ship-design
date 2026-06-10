@@ -1,7 +1,14 @@
 import "server-only";
 
-import type { AiGenerateRequest, AiProviderId, AiTokenUsage } from "./types";
+import type { AiGenerateRequest, AiModelTier, AiProviderId, AiTokenUsage } from "./types";
 import { createProviderHttpError } from "./errors";
+
+export function resolveRequestModel(
+  request: AiGenerateRequest,
+  defaultModels: { defaultModel: string; models: Record<AiModelTier, string> }
+) {
+  return request.model ?? defaultModels.models[request.modelTier ?? "default"] ?? defaultModels.defaultModel;
+}
 
 export function joinMessagesForPrompt(request: AiGenerateRequest) {
   return request.messages

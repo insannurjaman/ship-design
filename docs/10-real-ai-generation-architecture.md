@@ -264,23 +264,31 @@ Minimum AI variables:
 
 ```env
 AI_GENERATION_MODE=mock
+AI_PROVIDER=gemini
 GEMINI_API_KEY=
-GEMINI_MODEL=
+GEMINI_FAST_MODEL=
+GEMINI_DEFAULT_MODEL=
+GEMINI_REASONING_MODEL=
 GROQ_API_KEY=
-GROQ_MODEL=
+GROQ_FAST_MODEL=
+GROQ_DEFAULT_MODEL=
+GROQ_REASONING_MODEL=
 OPENROUTER_API_KEY=
-OPENROUTER_MODEL=
-HUGGINGFACE_API_KEY=
-HUGGINGFACE_MODEL=
+OPENROUTER_FAST_MODEL=
+OPENROUTER_DEFAULT_MODEL=
+OPENROUTER_REASONING_MODEL=
+HF_TOKEN=
+HF_DEFAULT_MODEL=
 ```
 
 Cost and safety:
 
 ```env
-MAX_RUN_COST_USD=
-MAX_AGENT_RETRIES=
-MAX_OUTPUT_TOKENS_PER_AGENT=
-AI_REQUEST_TIMEOUT_MS=
+MAX_RUN_COST_USD=0.00
+MAX_AGENT_RETRIES=1
+MAX_OUTPUT_TOKENS_PER_AGENT=1800
+AI_REQUEST_TIMEOUT_MS=45000
+MAX_REAL_AGENT_TASKS_PER_RUN=3
 ```
 
 App and database later:
@@ -305,7 +313,7 @@ Phase 15 adds a server-side provider gateway before the full real agent pipeline
 The gateway does not create projects, store outputs, call Figma, or run all agents yet. Its job is smaller:
 
 1. Read AI provider environment variables.
-2. Pick the best available provider.
+2. Pick the selected provider when real mode is enabled.
 3. Call the provider with `fetch`.
 4. Return one normalized response shape.
 5. Fall back to mock mode safely when needed.
@@ -320,9 +328,45 @@ Provider priority:
 
 Mock mode remains the default.
 
-If `AI_GENERATION_MODE=real` but no real provider API key is configured, Ship Design should fall back to the mock provider and return a warning.
+Provider selection is explicit in real mode:
+
+```env
+AI_GENERATION_MODE=real
+AI_PROVIDER=gemini
+```
+
+Supported `AI_PROVIDER` values are `gemini`, `groq`, `openrouter`, and `huggingface`. If `AI_GENERATION_MODE` is anything other than `real`, Ship Design always uses the mock provider.
+
+If `AI_GENERATION_MODE=real` but the selected provider API key is missing, Ship Design should fall back to the mock provider and return a warning. If a selected real provider fails during a call, the gateway should also return a normalized mock response with a warning.
 
 All provider calls must happen server-side only. Do not call these providers from React client components.
+
+Model tiers let agents ask for the right cost/speed profile without knowing provider-specific model names:
+
+```txt
+fast       quick drafts and cheap iterations
+default    normal product artifact generation
+reasoning  harder synthesis tasks
+```
+
+Provider model environment variables:
+
+```env
+GEMINI_FAST_MODEL=gemini-2.5-flash-lite
+GEMINI_DEFAULT_MODEL=gemini-2.5-flash
+GEMINI_REASONING_MODEL=gemini-2.5-flash
+
+GROQ_FAST_MODEL=llama-3.1-8b-instant
+GROQ_DEFAULT_MODEL=qwen/qwen3-32b
+GROQ_REASONING_MODEL=llama-3.3-70b-versatile
+
+OPENROUTER_FAST_MODEL=openrouter/free
+OPENROUTER_DEFAULT_MODEL=openrouter/free
+OPENROUTER_REASONING_MODEL=openrouter/free
+
+HF_TOKEN=
+HF_DEFAULT_MODEL=
+```
 
 Created gateway files:
 
@@ -345,17 +389,15 @@ Normalized response shape:
 type AiGenerateResponse = {
   provider: "mock" | "gemini" | "groq" | "openrouter" | "huggingface";
   model: string;
+  mode: "mock" | "real";
   text: string;
   raw?: unknown;
+  warnings: string[];
   usage?: {
     inputTokens?: number;
     outputTokens?: number;
     totalTokens?: number;
   };
-  warnings: Array<{
-    code: string;
-    message: string;
-  }>;
 };
 ```
 
@@ -382,8 +424,11 @@ Set:
 
 ```env
 AI_GENERATION_MODE=real
+AI_PROVIDER=gemini
 GEMINI_API_KEY=your_key_here
-GEMINI_MODEL=gemini-1.5-flash
+GEMINI_DEFAULT_MODEL=gemini-2.5-flash
+GEMINI_FAST_MODEL=gemini-2.5-flash-lite
+GEMINI_REASONING_MODEL=gemini-2.5-flash
 ```
 
 Then call `generateAiText` from server-side code.
@@ -393,13 +438,14 @@ Expected result:
 - Provider is `gemini`
 - Gemini `generateContent` is called with `fetch`
 - Response is normalized into `AiGenerateResponse`
-- If the key is missing, the gateway falls back to `mock` and returns a warning
+- Response includes `mode: "real"`
+- If the selected key is missing, the gateway falls back to `mock` and returns a warning
 
 ## Recommended V1 Rule
 
 Ship Design should continue using local mock generation unless both conditions are true:
 
 1. `AI_GENERATION_MODE=real`
-2. At least one real provider API key is present
+2. The selected `AI_PROVIDER` has a server-side API key configured
 
 This keeps the product safe while the real generation system is being tested.

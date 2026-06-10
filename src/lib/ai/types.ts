@@ -2,6 +2,8 @@ export type AiProviderId = "mock" | "gemini" | "groq" | "openrouter" | "huggingf
 
 export type AiGenerationMode = "mock" | "real";
 
+export type AiModelTier = "fast" | "default" | "reasoning";
+
 export type AiMessageRole = "system" | "user" | "assistant";
 
 export type AiMessage = {
@@ -12,6 +14,7 @@ export type AiMessage = {
 export type AiGenerateRequest = {
   messages: AiMessage[];
   model?: string;
+  modelTier?: AiModelTier;
   temperature?: number;
   maxOutputTokens?: number;
   metadata?: {
@@ -27,18 +30,14 @@ export type AiTokenUsage = {
   totalTokens?: number;
 };
 
-export type AiProviderWarning = {
-  code: string;
-  message: string;
-};
-
 export type AiGenerateResponse = {
   provider: AiProviderId;
   model: string;
+  mode: AiGenerationMode;
   text: string;
   raw?: unknown;
   usage?: AiTokenUsage;
-  warnings: AiProviderWarning[];
+  warnings: string[];
 };
 
 export type AiProvider = {
@@ -53,6 +52,7 @@ export type AiProviderConfig = {
   displayName: string;
   apiKey?: string;
   baseUrl: string;
+  models: Record<AiModelTier, string>;
   defaultModel: string;
   timeoutMs: number;
 };

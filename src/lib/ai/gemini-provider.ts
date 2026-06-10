@@ -2,7 +2,7 @@ import "server-only";
 
 import type { AiGenerateResponse, AiProvider, AiProviderConfig } from "./types";
 import { createProviderResponseError } from "./errors";
-import { fetchJson, splitSystemAndChatMessages } from "./providers";
+import { fetchJson, resolveRequestModel, splitSystemAndChatMessages } from "./providers";
 
 type GeminiResponse = {
   candidates?: Array<{
@@ -30,7 +30,7 @@ export function createGeminiProvider(config: AiProviderConfig): AiProvider {
         });
       }
 
-      const model = request.model ?? config.defaultModel;
+      const model = resolveRequestModel(request, config);
       const { system, messages } = splitSystemAndChatMessages(request);
       const userText = messages.map((message) => `${message.role}: ${message.content}`).join("\n\n");
       const url = `${config.baseUrl}/models/${encodeURIComponent(model)}:generateContent?key=${config.apiKey}`;
@@ -81,6 +81,7 @@ export function createGeminiProvider(config: AiProviderConfig): AiProvider {
       return {
         provider: "gemini",
         model,
+        mode: "real",
         text,
         raw: json,
         usage: {
