@@ -263,11 +263,15 @@ Use `.env.example` as the source of truth for required keys.
 Minimum AI variables:
 
 ```env
-OPENAI_API_KEY=
 AI_GENERATION_MODE=mock
-AI_DEFAULT_MODEL=
-AI_FAST_MODEL=
-AI_REASONING_MODEL=
+GEMINI_API_KEY=
+GEMINI_MODEL=
+GROQ_API_KEY=
+GROQ_MODEL=
+OPENROUTER_API_KEY=
+OPENROUTER_MODEL=
+HUGGINGFACE_API_KEY=
+HUGGINGFACE_MODEL=
 ```
 
 Cost and safety:
@@ -294,11 +298,108 @@ FIGMA_TEAM_ID=
 FIGMA_FILE_TEMPLATE_ID=
 ```
 
+## 9. Phase 15 Free-First AI Provider Gateway
+
+Phase 15 adds a server-side provider gateway before the full real agent pipeline.
+
+The gateway does not create projects, store outputs, call Figma, or run all agents yet. Its job is smaller:
+
+1. Read AI provider environment variables.
+2. Pick the best available provider.
+3. Call the provider with `fetch`.
+4. Return one normalized response shape.
+5. Fall back to mock mode safely when needed.
+
+Provider priority:
+
+1. `mock`
+2. `gemini`
+3. `groq`
+4. `openrouter`
+5. `huggingface`
+
+Mock mode remains the default.
+
+If `AI_GENERATION_MODE=real` but no real provider API key is configured, Ship Design should fall back to the mock provider and return a warning.
+
+All provider calls must happen server-side only. Do not call these providers from React client components.
+
+Created gateway files:
+
+```txt
+src/lib/ai/config.ts
+src/lib/ai/providers.ts
+src/lib/ai/types.ts
+src/lib/ai/errors.ts
+src/lib/ai/mock-provider.ts
+src/lib/ai/gemini-provider.ts
+src/lib/ai/groq-provider.ts
+src/lib/ai/openrouter-provider.ts
+src/lib/ai/huggingface-provider.ts
+src/lib/ai/client.ts
+```
+
+Normalized response shape:
+
+```ts
+type AiGenerateResponse = {
+  provider: "mock" | "gemini" | "groq" | "openrouter" | "huggingface";
+  model: string;
+  text: string;
+  raw?: unknown;
+  usage?: {
+    inputTokens?: number;
+    outputTokens?: number;
+    totalTokens?: number;
+  };
+  warnings: Array<{
+    code: string;
+    message: string;
+  }>;
+};
+```
+
+## How To Test Mock Mode
+
+Use the default environment:
+
+```env
+AI_GENERATION_MODE=mock
+```
+
+Then call `generateAiText` from a server-side script, server action, or future API route.
+
+Expected result:
+
+- Provider is `mock`
+- No external network call is made
+- Response includes local placeholder text
+- No API key is required
+
+## How To Test Gemini Mode
+
+Set:
+
+```env
+AI_GENERATION_MODE=real
+GEMINI_API_KEY=your_key_here
+GEMINI_MODEL=gemini-1.5-flash
+```
+
+Then call `generateAiText` from server-side code.
+
+Expected result:
+
+- Provider is `gemini`
+- Gemini `generateContent` is called with `fetch`
+- Response is normalized into `AiGenerateResponse`
+- If the key is missing, the gateway falls back to `mock` and returns a warning
+
 ## Recommended V1 Rule
 
 Ship Design should continue using local mock generation unless both conditions are true:
 
 1. `AI_GENERATION_MODE=real`
-2. `OPENAI_API_KEY` is present
+2. At least one real provider API key is present
 
 This keeps the product safe while the real generation system is being tested.
