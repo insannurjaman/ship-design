@@ -2,38 +2,29 @@
 
 ## What This Is
 
-This document explains the Phase 17.7 reliability rules for Ship Design.
+This document explains the Phase 17.7 reliability rules for Ship Design. Phase 19 expands the generated package to all 8 artifacts.
 
 It covers two important truths:
 
-1. V1 generation currently creates three artifacts.
+1. Phase 19 generation creates eight artifacts.
 2. Real AI mode should try configured real providers before using mock generation.
 
 ## Current Supported Outputs
 
-Ship Design V1 currently generates:
+Ship Design currently generates:
 
 | Output | Status | Notes |
 | --- | --- | --- |
 | Product Brief | Generated in V1 | Product strategy and MVP framing. |
 | UX Docs | Generated in V1 | Lightweight research assumptions, questions, and risks. |
 | User Flows | Generated in V1 | Primary, secondary, and recovery flows. |
+| Screen List | Generated in V1 | Screen inventory and state coverage. |
+| Design System Plan | Generated in V1 | Tokens, components, states, and responsive behavior. |
+| Figma Plan | Generated in V1 | Figma organization and prototype planning. |
+| Landing Page Copy | Generated in V1 | Marketing page structure and copy. |
+| Handoff Docs | Generated in V1 | Developer handoff, QA checks, and open decisions. |
 
-These are the only outputs that should be selectable in the New Project form during this phase.
-
-## Coming Soon Outputs
-
-These outputs are staged for later phases and should appear as disabled UI options:
-
-| Output | Status |
-| --- | --- |
-| Screen List | Coming soon |
-| Design System Plan | Coming soon |
-| Figma Plan | Coming soon |
-| Landing Page Copy | Coming soon |
-| Handoff Docs | Coming soon |
-
-Do not imply that these five artifacts are generated until the real pipeline supports them.
+All 8 outputs should be selectable in the New Project form.
 
 ## Provider Fallback Rules
 

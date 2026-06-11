@@ -3,6 +3,7 @@ import { AppShell } from "@/components/layout/app-shell";
 import { StatePanel } from "@/components/layout/state-panel";
 import { Button } from "@/components/ui/button";
 import { getGenerationRun } from "@/lib/generation/run-store";
+import { getGenerationArtifactSpec } from "@/lib/generation/artifact-renderer";
 import {
   mockActivityLogs,
   mockAgentRuns,
@@ -147,9 +148,9 @@ function createProjectFromRun(run: GenerationRun): Project {
 function createAgentsFromRun(run: GenerationRun): AgentRun[] {
   return run.steps.map((step) => ({
     id: step.id,
-    name: `${step.title} Agent`,
+    name: getGenerationArtifactSpec(step.id)?.agentName ?? `${step.title} Agent`,
     status: step.status,
-    output: step.title,
+    output: getGenerationArtifactSpec(step.id)?.title ?? step.title,
     description: `Generated ${step.title} for ${run.input.productName}.`,
     progress: step.progress
   }));
@@ -159,8 +160,8 @@ function createLogsFromRun(run: GenerationRun): ActivityLog[] {
   return run.steps.map((step, index) => ({
     id: step.id,
     time: index === 0 ? "Now" : `+${index + 1}m`,
-    label: step.title,
-    message: `${step.title} completed using ${run.provider} (${run.mode}) with ${run.model}.`,
+    label: getGenerationArtifactSpec(step.id)?.title ?? step.title,
+    message: `${getGenerationArtifactSpec(step.id)?.title ?? step.title} completed using ${run.provider} (${run.mode}) with ${run.model}.`,
     tone: step.status === "error" ? "danger" : "success"
   }));
 }

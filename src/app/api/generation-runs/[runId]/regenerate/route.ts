@@ -4,7 +4,8 @@ import {
   regenerateArtifact,
   RegenerateArtifactError
 } from "@/lib/generation/regenerate-artifact";
-import type { GenerationArtifact } from "@/lib/generation/progress";
+import { generationArtifactSpecs } from "@/lib/generation/artifact-renderer";
+import type { GenerationArtifact, GenerationArtifactId } from "@/lib/generation/progress";
 
 type RegenerateRouteProps = {
   params: Promise<{ runId: string }>;
@@ -12,7 +13,7 @@ type RegenerateRouteProps = {
 
 type FieldErrors = Record<string, string>;
 
-const supportedArtifactIds = new Set(["product-brief", "ux-docs", "user-flows"]);
+const supportedArtifactIds = new Set<GenerationArtifactId>(generationArtifactSpecs.map((spec) => spec.id));
 
 export async function POST(request: Request, { params }: RegenerateRouteProps) {
   const { runId } = await params;
@@ -88,8 +89,8 @@ function validateRegenerateRequest(payload: unknown):
   const value = payload as Record<string, unknown>;
   const fieldErrors: FieldErrors = {};
 
-  if (typeof value.artifactId !== "string" || !supportedArtifactIds.has(value.artifactId)) {
-    fieldErrors.artifactId = "Choose Product Brief, UX Docs, or User Flows.";
+  if (!isSupportedArtifactId(value.artifactId)) {
+    fieldErrors.artifactId = "Choose one of the 8 generated artifacts.";
   }
 
   if (value.feedback !== undefined && typeof value.feedback !== "string") {
@@ -103,11 +104,17 @@ function validateRegenerateRequest(payload: unknown):
     };
   }
 
+  const artifactId = value.artifactId as GenerationArtifactId;
+
   return {
     ok: true,
     input: {
-      artifactId: value.artifactId as GenerationArtifact["id"],
+      artifactId,
       feedback: typeof value.feedback === "string" ? value.feedback.trim() : undefined
     }
   };
+}
+
+function isSupportedArtifactId(value: unknown): value is GenerationArtifactId {
+  return typeof value === "string" && supportedArtifactIds.has(value as GenerationArtifactId);
 }

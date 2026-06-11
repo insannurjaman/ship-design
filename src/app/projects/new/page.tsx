@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { mockOutputs } from "@/lib/mock-data";
-import { futureOutputs, outputScopeHelperText, supportedV1Outputs } from "@/lib/output-scope";
+import { outputScopeHelperText, supportedV1Outputs } from "@/lib/output-scope";
 
 export default function NewProjectPage() {
   return (
@@ -22,9 +22,9 @@ export default function NewProjectPage() {
               <h2 className="font-mono text-sm uppercase text-ink-secondary">Package preview</h2>
               <p className="mt-2 text-sm leading-6 text-ink-secondary">{outputScopeHelperText}</p>
             </CardHeader>
-            <CardBody className="grid gap-5">
+            <CardBody className="grid gap-3">
               <div className="grid gap-3">
-                <p className="font-mono text-xs uppercase text-accent-green">Generated in V1</p>
+                <p className="font-mono text-xs uppercase text-accent-green">Generated package</p>
                 {mockOutputs
                   .filter((output) => supportedV1Outputs.includes(output.title as (typeof supportedV1Outputs)[number]))
                   .map((output) => (
@@ -38,19 +38,6 @@ export default function NewProjectPage() {
                       <p className="mt-2 text-sm text-ink-secondary">{output.title}</p>
                     </div>
                   ))}
-              </div>
-
-              <div className="grid gap-3">
-                <p className="font-mono text-xs uppercase text-ink-muted">Coming soon</p>
-                {futureOutputs.map((output) => (
-                  <div key={output} className="border border-line bg-surface-base p-3 opacity-75">
-                    <div className="flex items-center justify-between gap-3">
-                      <span className="font-mono text-xs uppercase text-ink-muted">Staged</span>
-                      <Badge tone="muted">Coming soon</Badge>
-                    </div>
-                    <p className="mt-2 text-sm text-ink-muted">{output}</p>
-                  </div>
-                ))}
               </div>
             </CardBody>
           </Card>

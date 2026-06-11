@@ -12,10 +12,20 @@ export type CreateGenerationRunRequest = {
   preferredStyle?: string;
 };
 
-export type GenerationArtifactStatus = "ready" | "error";
+export type GenerationArtifactStatus = "ready" | "needs-review" | "error";
+
+export type GenerationArtifactId =
+  | "product-brief"
+  | "ux-docs"
+  | "user-flows"
+  | "screen-list"
+  | "design-system-plan"
+  | "figma-plan"
+  | "landing-page-copy"
+  | "handoff-docs";
 
 export type GenerationArtifact = {
-  id: "product-brief" | "ux-docs" | "user-flows";
+  id: GenerationArtifactId;
   title: string;
   type: string;
   status: GenerationArtifactStatus;
@@ -65,15 +75,35 @@ export type GenerationRun = {
 export const generationStepTemplates: Array<Pick<GenerationStep, "id" | "title">> = [
   {
     id: "product-brief",
-    title: "Product Brief"
+    title: "Product Strategy"
   },
   {
     id: "ux-docs",
-    title: "UX Docs"
+    title: "UX Research"
   },
   {
     id: "user-flows",
-    title: "User Flows"
+    title: "UX Flow"
+  },
+  {
+    id: "screen-list",
+    title: "Screen Inventory"
+  },
+  {
+    id: "design-system-plan",
+    title: "Design System"
+  },
+  {
+    id: "figma-plan",
+    title: "Figma Builder"
+  },
+  {
+    id: "landing-page-copy",
+    title: "Landing Page"
+  },
+  {
+    id: "handoff-docs",
+    title: "QA Handoff"
   }
 ];
 
@@ -125,6 +155,26 @@ export function createErrorSteps(failedIndex: number): GenerationStep[] {
       ...step,
       status: "queued",
       progress: 0
+    };
+  });
+}
+
+export function createGenerationStepsFromArtifacts(artifacts: GenerationArtifact[]): GenerationStep[] {
+  return generationStepTemplates.map((step) => {
+    const artifact = artifacts.find((item) => item.id === step.id);
+
+    if (!artifact) {
+      return {
+        ...step,
+        status: "queued",
+        progress: 0
+      };
+    }
+
+    return {
+      ...step,
+      status: artifact.status === "error" ? "error" : "complete",
+      progress: artifact.status === "error" ? 0 : 100
     };
   });
 }

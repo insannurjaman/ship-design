@@ -86,7 +86,7 @@ export const mockProjects: Project[] = [
 
 export const mockAgentRuns: AgentRun[] = [
   {
-    id: "strategy",
+    id: "product-brief",
     name: "Product Strategy Agent",
     status: "complete",
     output: "Positioning, audience, promise, MVP scope",
@@ -94,7 +94,7 @@ export const mockAgentRuns: AgentRun[] = [
     progress: 100
   },
   {
-    id: "research",
+    id: "ux-docs",
     name: "UX Research Agent",
     status: "complete",
     output: "Assumptions, research questions, risks",
@@ -102,7 +102,7 @@ export const mockAgentRuns: AgentRun[] = [
     progress: 100
   },
   {
-    id: "flows",
+    id: "user-flows",
     name: "UX Flow Agent",
     status: "running",
     output: "Primary journey and screen inventory",
@@ -110,7 +110,15 @@ export const mockAgentRuns: AgentRun[] = [
     progress: 68
   },
   {
-    id: "system",
+    id: "screen-list",
+    name: "Screen Inventory Agent",
+    status: "queued",
+    output: "Screen list, states, navigation notes",
+    description: "Waiting for flows before creating the screen inventory.",
+    progress: 0
+  },
+  {
+    id: "design-system-plan",
     name: "Design System Agent",
     status: "queued",
     output: "Token plan, components, layout rules",
@@ -118,7 +126,7 @@ export const mockAgentRuns: AgentRun[] = [
     progress: 0
   },
   {
-    id: "figma",
+    id: "figma-plan",
     name: "Figma Builder Agent",
     status: "queued",
     output: "Pages, frames, components, prototype links",
@@ -126,7 +134,7 @@ export const mockAgentRuns: AgentRun[] = [
     progress: 0
   },
   {
-    id: "landing",
+    id: "landing-page-copy",
     name: "Landing Page Agent",
     status: "queued",
     output: "Hero copy, proof points, CTA structure",
@@ -134,7 +142,7 @@ export const mockAgentRuns: AgentRun[] = [
     progress: 0
   },
   {
-    id: "handoff",
+    id: "handoff-docs",
     name: "QA Handoff Agent",
     status: "queued",
     output: "Developer handoff docs, states, QA notes",
@@ -145,7 +153,7 @@ export const mockAgentRuns: AgentRun[] = [
 
 export const mockOutputs: OutputArtifact[] = [
   {
-    id: "brief",
+    id: "product-brief",
     title: "Product Brief",
     type: "Strategy",
     status: "ready",
@@ -157,7 +165,7 @@ export const mockOutputs: OutputArtifact[] = [
     ]
   },
   {
-    id: "research",
+    id: "ux-docs",
     title: "UX Docs",
     type: "Research",
     status: "ready",
@@ -169,7 +177,7 @@ export const mockOutputs: OutputArtifact[] = [
     ]
   },
   {
-    id: "flows",
+    id: "user-flows",
     title: "User Flows",
     type: "UX",
     status: "needs-review",
@@ -181,7 +189,7 @@ export const mockOutputs: OutputArtifact[] = [
     ]
   },
   {
-    id: "screens",
+    id: "screen-list",
     title: "Screen List",
     type: "Inventory",
     status: "ready",
@@ -193,7 +201,7 @@ export const mockOutputs: OutputArtifact[] = [
     ]
   },
   {
-    id: "system",
+    id: "design-system-plan",
     title: "Design System Plan",
     type: "Design",
     status: "draft",
@@ -205,7 +213,7 @@ export const mockOutputs: OutputArtifact[] = [
     ]
   },
   {
-    id: "figma",
+    id: "figma-plan",
     title: "Figma Plan",
     type: "Figma",
     status: "draft",
@@ -217,7 +225,7 @@ export const mockOutputs: OutputArtifact[] = [
     ]
   },
   {
-    id: "landing",
+    id: "landing-page-copy",
     title: "Landing Page Copy",
     type: "Marketing",
     status: "needs-review",
@@ -229,7 +237,7 @@ export const mockOutputs: OutputArtifact[] = [
     ]
   },
   {
-    id: "handoff",
+    id: "handoff-docs",
     title: "Handoff Docs",
     type: "Engineering",
     status: "ready",
@@ -246,6 +254,7 @@ export const mockAgentTemplates: AgentTemplate[] = [
   { name: "Strategy", role: "Positioning and MVP scope", status: "enabled" },
   { name: "Research", role: "Assumptions and interview plan", status: "enabled" },
   { name: "Flows", role: "Journeys and screen inventory", status: "enabled" },
+  { name: "Screen Inventory", role: "Screen list and state coverage", status: "enabled" },
   { name: "Design System", role: "Tokens, components, and responsive rules", status: "enabled" },
   { name: "Figma", role: "Pages, frames, components", status: "queued" },
   { name: "Landing", role: "Hero copy, proof points, CTA structure", status: "enabled" },

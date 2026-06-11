@@ -305,9 +305,24 @@ export function OutputViewer({
           </CardHeader>
           <CardBody className="grid gap-2">
             {viewerOutputs.map((output) => (
-              <div key={output.id} className="flex items-center justify-between gap-3 border border-line bg-surface-base p-3">
-                <span className="text-sm text-ink-secondary">{output.title}</span>
-                <span className="font-mono text-xs uppercase text-ink-muted">v{output.activeVersion ?? 1}</span>
+              <div key={output.id} className="grid gap-2 border border-line bg-surface-base p-3">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-sm text-ink-secondary">{output.title}</span>
+                  <span className="font-mono text-xs uppercase text-ink-muted">v{output.activeVersion ?? 1}</span>
+                </div>
+                <Badge
+                  tone={
+                    output.status === "ready"
+                      ? "success"
+                      : output.status === "needs-review"
+                        ? "warning"
+                        : output.status === "error"
+                          ? "danger"
+                          : "muted"
+                  }
+                >
+                  {output.status}
+                </Badge>
               </div>
             ))}
           </CardBody>

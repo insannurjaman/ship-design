@@ -1,13 +1,15 @@
 import "server-only";
 
 import { generateAiText } from "@/lib/ai/client";
+import { createArtifactVersion } from "@/lib/generation/artifact-versions";
+import { createDependencyContext } from "@/lib/generation/artifact-dependencies";
 import {
   createArtifactPrompt,
   generationArtifactSpecs,
   renderGenerationArtifact
 } from "@/lib/generation/artifact-renderer";
 import {
-  createGenerationSteps,
+  createGenerationStepsFromArtifacts,
   getGenerationProgress,
   type CreateGenerationRunRequest,
   type GenerationArtifact,
@@ -20,32 +22,37 @@ export async function createGenerationRun(input: CreateGenerationRunRequest): Pr
   const artifacts: GenerationArtifact[] = [];
 
   for (const spec of generationArtifactSpecs) {
-    const response = await generateAiText({
-      messages: [
-        {
-          role: "system",
-          content: [
-            "You are a senior product design agent working inside Ship Design.",
-            "Create practical product design artifacts for designers, founders, product teams, Figma, Codex, and engineers.",
-            "Keep the language clear, structured, and beginner-friendly."
-          ].join(" ")
-        },
-        {
-          role: "user",
-          content: createArtifactPrompt(input, spec)
+    try {
+      const response = await generateAiText({
+        messages: [
+          {
+            role: "system",
+            content: [
+              "You are a senior product design agent working inside Ship Design.",
+              "Create practical product design artifacts for designers, founders, product teams, Figma, Codex, and engineers.",
+              "Use dependency context from earlier artifacts when it is provided.",
+              "Keep the language clear, structured, and beginner-friendly."
+            ].join(" ")
+          },
+          {
+            role: "user",
+            content: createArtifactPrompt(input, spec, createDependencyContext(spec.id, input, artifacts))
+          }
+        ],
+        modelTier: "default",
+        temperature: 0.35,
+        maxOutputTokens: readMaxOutputTokens(),
+        metadata: {
+          projectId: runId,
+          agentId: spec.id,
+          taskId: `generate-${spec.id}`
         }
-      ],
-      modelTier: "default",
-      temperature: 0.35,
-      maxOutputTokens: readMaxOutputTokens(),
-      metadata: {
-        projectId: runId,
-        agentId: spec.id,
-        taskId: `generate-${spec.id}`
-      }
-    });
+      });
 
-    artifacts.push(renderGenerationArtifact(spec, response));
+      artifacts.push(renderGenerationArtifact(spec, response));
+    } catch (error) {
+      artifacts.push(createFailedArtifact(spec, error));
+    }
   }
 
   const firstArtifact = artifacts[0];
@@ -56,12 +63,12 @@ export async function createGenerationRun(input: CreateGenerationRunRequest): Pr
   const finalProvider = artifacts.find((artifact) => artifact.finalProvider !== "mock")?.finalProvider ?? firstArtifact?.finalProvider ?? "mock";
   const run: GenerationRun = {
     id: runId,
-    status: "complete",
+    status: artifacts.some((artifact) => artifact.status === "error") ? "error" : "complete",
     progress: getGenerationProgress(artifacts.length),
     createdAt: new Date().toISOString(),
     input,
     artifacts,
-    steps: createGenerationSteps(artifacts.length),
+    steps: createGenerationStepsFromArtifacts(artifacts),
     provider: firstArtifact?.provider ?? "mock",
     model: firstArtifact?.model ?? "mock-ship-design",
     mode: firstArtifact?.mode ?? "mock",
@@ -73,6 +80,59 @@ export async function createGenerationRun(input: CreateGenerationRunRequest): Pr
   };
 
   return saveGenerationRun(run);
+}
+
+function createFailedArtifact(
+  spec: (typeof generationArtifactSpecs)[number],
+  error: unknown
+): GenerationArtifact {
+  const message = error instanceof Error ? error.message : "Unknown generation error.";
+  const markdown = [
+    `# ${spec.title}`,
+    "",
+    "This artifact could not be generated.",
+    "",
+    "## Recovery",
+    "Retry the generation run or regenerate this artifact after the provider issue is resolved.",
+    "",
+    `## Error`,
+    message
+  ].join("\n");
+  const body = ["This artifact could not be generated.", message];
+  const version = createArtifactVersion({
+    version: 1,
+    markdown,
+    summary: "This artifact could not be generated.",
+    body,
+    provider: "mock",
+    model: "failed-generation",
+    mode: "mock",
+    warnings: [message],
+    attemptedProviders: [],
+    fallbackUsed: false,
+    finalProvider: "mock",
+    providerWarnings: [message]
+  });
+
+  return {
+    id: spec.id,
+    title: spec.title,
+    type: spec.type,
+    status: "error",
+    summary: version.summary,
+    body,
+    markdown,
+    provider: version.provider,
+    model: version.model,
+    mode: version.mode,
+    warnings: version.warnings,
+    attemptedProviders: version.attemptedProviders,
+    fallbackUsed: version.fallbackUsed,
+    finalProvider: version.finalProvider,
+    providerWarnings: version.providerWarnings,
+    activeVersion: version.version,
+    versions: [version]
+  };
 }
 
 function createRunId() {

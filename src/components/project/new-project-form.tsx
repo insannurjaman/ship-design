@@ -10,7 +10,7 @@ import { CheckboxRow } from "@/components/project/checkbox-row";
 import { SegmentedControl } from "@/components/project/segmented-control";
 import { StatusPill } from "@/components/ui/status-pill";
 import { Textarea } from "@/components/ui/textarea";
-import { futureOutputs, outputScopeHelperText, supportedV1Outputs } from "@/lib/output-scope";
+import { outputScopeHelperText, supportedV1Outputs } from "@/lib/output-scope";
 
 type GenerationRunResponse = {
   id: string;
@@ -175,15 +175,6 @@ export function NewProjectForm() {
                   disabled={isGenerating}
                 />
               ))}
-              {futureOutputs.map((output) => (
-                <CheckboxRow
-                  key={output}
-                  label={output}
-                  checked={false}
-                  disabled
-                  meta={<Badge tone="muted">Coming soon</Badge>}
-                />
-              ))}
             </div>
           </div>
 
@@ -198,7 +189,7 @@ export function NewProjectForm() {
             <div className="border border-accent-green/60 bg-accent-soft p-4" aria-live="polite">
               <Badge tone="accent">Preparing run</Badge>
               <p className="mt-3 text-sm leading-6 text-ink-secondary">
-                Creating a generation run for {platform.toLowerCase()} and generating 3 supported outputs.
+                Creating a generation run and generating 8 artifacts.
               </p>
             </div>
           ) : null}

@@ -8,6 +8,10 @@ import {
   getNextArtifactVersionNumber
 } from "@/lib/generation/artifact-versions";
 import {
+  createDependencyContext,
+  markDownstreamArtifactsNeedsReview
+} from "@/lib/generation/artifact-dependencies";
+import {
   createArtifactPrompt,
   generationArtifactSpecs,
   type GenerationArtifactSpec
@@ -55,8 +59,8 @@ export async function regenerateArtifact(
   const spec = generationArtifactSpecs.find((item) => item.id === request.artifactId);
 
   if (!artifact || !spec) {
-    throw new RegenerateArtifactError("Unsupported artifact for V1 regeneration.", 400, {
-      artifactId: "Choose Product Brief, UX Docs, or User Flows."
+    throw new RegenerateArtifactError("Unsupported artifact for regeneration.", 400, {
+      artifactId: "Choose one of the 8 generated artifacts."
     });
   }
 
@@ -107,8 +111,9 @@ export async function regenerateArtifact(
     providerWarnings: response.providerWarnings
   });
   const updatedArtifact = applyActiveArtifactVersion(artifact, nextVersion);
-  const updatedArtifacts = run.artifacts.map((item, index) =>
-    index === artifactIndex ? updatedArtifact : item
+  const updatedArtifacts = markDownstreamArtifactsNeedsReview(
+    run.artifacts.map((item, index) => (index === artifactIndex ? updatedArtifact : item)),
+    updatedArtifact.id
   );
   const updatedRun = updateGenerationRun(recalculateRunMetadata({
     ...run,
@@ -131,13 +136,17 @@ function createRegenerationPrompt(
   currentMarkdown: string,
   feedback?: string
 ) {
+  const dependencyContext = createDependencyContext(artifact.id, run.input, run.artifacts);
+
   return [
     createArtifactPrompt(run.input, spec),
+    dependencyContext ? ["", "Relevant dependency context:", dependencyContext].join("\n") : "",
     "",
     "Regeneration context:",
     `- Selected artifact: ${artifact.title}`,
     "- Regenerate only this artifact.",
-    "- Do not regenerate Product Brief, UX Docs, or User Flows unless this is the selected artifact.",
+    "- Do not regenerate any other artifact unless this is the selected artifact.",
+    "- Downstream artifacts may be marked needs-review after this succeeds, but do not rewrite them.",
     "- Keep the output markdown clean and structured.",
     "",
     "Current active artifact markdown:",
