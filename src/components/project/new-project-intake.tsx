@@ -1,0 +1,149 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import { NewProjectForm } from "@/components/project/new-project-form";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardBody, CardHeader } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
+import {
+  litePackageOutputs,
+  outputScopeHelperText,
+  requiredOutputLabels,
+  supportedV1Outputs
+} from "@/lib/output-scope";
+
+const outputTypes: Record<string, string> = {
+  "Product Brief": "Strategy",
+  "UX Docs": "Research",
+  "User Flows": "UX",
+  "Screen List": "Inventory",
+  "Design System Plan": "Design",
+  "Figma Plan": "Figma",
+  "Landing Page Copy": "Marketing",
+  "Handoff Docs": "Engineering"
+};
+
+export function NewProjectIntake() {
+  const [selectedOutputs, setSelectedOutputs] = useState<string[]>([...litePackageOutputs]);
+  const requiredOutputs = useMemo(() => new Set<string>(requiredOutputLabels), []);
+  const selectedSet = useMemo(() => new Set(selectedOutputs), [selectedOutputs]);
+  const selectedArtifacts = supportedV1Outputs.filter((output) => selectedSet.has(output));
+  const unselectedOptionalArtifacts = supportedV1Outputs.filter(
+    (output) => !selectedSet.has(output) && !requiredOutputs.has(output)
+  );
+
+  function toggleOutput(output: string, checked: boolean) {
+    if (requiredOutputs.has(output)) return;
+
+    setSelectedOutputs((current) =>
+      checked
+        ? Array.from(new Set([...current, output]))
+        : current.filter((item) => item !== output)
+    );
+  }
+
+  function applyLitePreset() {
+    setSelectedOutputs([...litePackageOutputs]);
+  }
+
+  function applyFullPreset() {
+    setSelectedOutputs([...supportedV1Outputs]);
+  }
+
+  return (
+    <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
+      <NewProjectForm
+        selectedOutputs={selectedOutputs}
+        onToggleOutput={toggleOutput}
+        onSelectLitePackage={applyLitePreset}
+        onSelectFullPackage={applyFullPreset}
+      />
+
+      <aside className="grid content-start gap-4">
+        <Card>
+          <CardHeader>
+            <h2 className="font-mono text-sm uppercase text-ink-secondary">Package preview</h2>
+            <p className="mt-2 text-sm leading-6 text-ink-secondary">{outputScopeHelperText}</p>
+          </CardHeader>
+          <CardBody className="grid gap-4">
+            <div className="grid grid-cols-2 gap-3">
+              <PreviewMetric label="Package size" value={`${selectedOutputs.length} / ${supportedV1Outputs.length}`} />
+              <PreviewMetric label="AI calls" value={`${selectedOutputs.length}`} />
+            </div>
+
+            <div className="border border-accent-green/60 bg-accent-soft p-3">
+              <Badge tone="accent">Best for free providers</Badge>
+              <p className="mt-3 text-sm leading-6 text-ink-secondary">
+                Lite package generates the core strategy, research, flows, and screen list first.
+                Full package creates all 8 artifacts and may use more quota.
+              </p>
+            </div>
+
+            <div className="grid gap-3">
+              <p className="font-mono text-xs uppercase text-accent-green">Selected artifacts</p>
+              {selectedArtifacts.map((output) => (
+                <ArtifactPreviewRow key={output} output={output} tone="success" label="Selected" />
+              ))}
+            </div>
+
+            {unselectedOptionalArtifacts.length > 0 ? (
+              <div className="grid gap-3">
+                <p className="font-mono text-xs uppercase text-ink-muted">Not selected</p>
+                {unselectedOptionalArtifacts.map((output) => (
+                  <ArtifactPreviewRow key={output} output={output} tone="muted" label="Not selected" />
+                ))}
+              </div>
+            ) : null}
+          </CardBody>
+        </Card>
+
+        <EmptyState
+          title="No clarifying questions yet"
+          description="If the idea is too thin, Ship Design will pause here and ask for the missing inputs before running agents."
+        />
+
+        <Card className="border-status-warning/60">
+          <CardBody>
+            <Badge tone="warning">Review guardrail</Badge>
+            <h2 className="mt-4 text-lg font-semibold">Style conflict detected</h2>
+            <p className="mt-2 text-sm leading-6 text-ink-secondary">
+              If a prompt asks for conflicting visual directions, the agent flags it before Figma
+              generation.
+            </p>
+          </CardBody>
+        </Card>
+      </aside>
+    </div>
+  );
+}
+
+function PreviewMetric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="border border-line bg-surface-base p-3">
+      <p className="font-mono text-[11px] uppercase text-ink-muted">{label}</p>
+      <p className="mt-2 font-mono text-lg text-accent-green">{value}</p>
+    </div>
+  );
+}
+
+function ArtifactPreviewRow({
+  output,
+  tone,
+  label
+}: {
+  output: string;
+  tone: "success" | "muted";
+  label: string;
+}) {
+  return (
+    <div className="border border-line bg-surface-base p-3">
+      <div className="flex items-center justify-between gap-3">
+        <span className="font-mono text-xs uppercase text-accent-green">
+          {outputTypes[output] ?? "Output"}
+        </span>
+        <Badge tone={tone}>{label}</Badge>
+      </div>
+      <p className="mt-2 text-sm text-ink-secondary">{output}</p>
+    </div>
+  );
+}

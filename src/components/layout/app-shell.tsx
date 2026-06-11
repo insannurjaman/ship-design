@@ -10,6 +10,7 @@ type AppShellProps = {
   eyebrow?: string;
   description?: string;
   actions?: React.ReactNode;
+  idleModeLabel?: string;
   runInfo?: {
     provider: string;
     model: string;
@@ -23,9 +24,10 @@ export function AppShell({
   eyebrow = "Workspace",
   description,
   actions,
+  idleModeLabel,
   runInfo
 }: AppShellProps) {
-  const shellModeLabel = runInfo ? `Mode ${runInfo.mode}` : "Demo mode";
+  const shellModeLabel = runInfo ? `Mode ${runInfo.mode}` : (idleModeLabel ?? "Demo mode");
   const shellModeTone = runInfo?.mode === "real" ? "complete" : "info";
 
   return (
@@ -84,7 +86,7 @@ export function AppShell({
               </div>
               <div className="flex flex-wrap items-center gap-3">
                 <Badge tone={runInfo?.mode === "real" ? "success" : "accent"}>
-                  {runInfo ? `Mode ${runInfo.mode}` : "Local demo"}
+                  {runInfo ? `Mode ${runInfo.mode}` : (idleModeLabel ?? "Local demo")}
                 </Badge>
                 {runInfo ? (
                   <>

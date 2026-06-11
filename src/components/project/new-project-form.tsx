@@ -11,7 +11,6 @@ import { SegmentedControl } from "@/components/project/segmented-control";
 import { StatusPill } from "@/components/ui/status-pill";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  litePackageOutputs,
   outputScopeHelperText,
   requiredOutputLabels,
   supportedV1Outputs
@@ -38,11 +37,54 @@ type GenerationRunErrorResponse = {
   fieldErrors?: Record<string, string>;
 };
 
-export function NewProjectForm() {
+export type NewProjectFormValues = {
+  productName: string;
+  productType: string;
+  targetUsers: string;
+  mainProblem: string;
+  productGoal: string;
+  preferredStyle: string;
+};
+
+type NewProjectFormProps = {
+  selectedOutputs: string[];
+  onToggleOutput: (output: string, checked: boolean) => void;
+  onSelectLitePackage: () => void;
+  onSelectFullPackage: () => void;
+};
+
+const emptyFormValues: NewProjectFormValues = {
+  productName: "",
+  productType: "",
+  targetUsers: "",
+  mainProblem: "",
+  productGoal: "",
+  preferredStyle: ""
+};
+
+const sampleFormValues: NewProjectFormValues = {
+  productName: "Forge Brief",
+  productType: "Agency workflow tool",
+  targetUsers:
+    "Product strategists, agency founders, and delivery leads who need to turn messy client ideas into consistent MVP design packages.",
+  mainProblem:
+    "Discovery outputs are inconsistent, hard to review, and usually need manual restructuring before design or engineering can use them.",
+  productGoal:
+    "Generate a practical product strategy, UX plan, Figma-ready structure, landing page copy, and developer handoff from one intake.",
+  preferredStyle:
+    "Dark technical interface, acid green accent, crisp 1px borders, minimal radius, mono labels, and a premium developer-tool SaaS feel."
+};
+
+export function NewProjectForm({
+  selectedOutputs,
+  onToggleOutput,
+  onSelectLitePackage,
+  onSelectFullPackage
+}: NewProjectFormProps) {
   const router = useRouter();
   const [isGenerating, setIsGenerating] = useState(false);
   const [platform, setPlatform] = useState("Both");
-  const [selectedOutputs, setSelectedOutputs] = useState<string[]>([...supportedV1Outputs]);
+  const [formValues, setFormValues] = useState<NewProjectFormValues>(emptyFormValues);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [warningMessage, setWarningMessage] = useState<string | null>(null);
   const requiredOutputs = new Set<string>(requiredOutputLabels);
@@ -53,8 +95,6 @@ export function NewProjectForm() {
     setErrorMessage(null);
     setWarningMessage(null);
 
-    const formData = new FormData(event.currentTarget);
-
     try {
       const response = await fetch("/api/generation-runs", {
         method: "POST",
@@ -62,14 +102,14 @@ export function NewProjectForm() {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          productName: readFormValue(formData, "product-name"),
-          productType: readFormValue(formData, "product-type"),
-          targetUsers: readFormValue(formData, "target-users"),
-          mainProblem: readFormValue(formData, "main-problem"),
-          productGoal: readFormValue(formData, "product-goal"),
+          productName: formValues.productName.trim(),
+          productType: formValues.productType.trim(),
+          targetUsers: formValues.targetUsers.trim(),
+          mainProblem: formValues.mainProblem.trim(),
+          productGoal: formValues.productGoal.trim(),
           platform,
           outputTypes: selectedOutputs,
-          preferredStyle: readFormValue(formData, "preferred-style")
+          preferredStyle: formValues.preferredStyle.trim()
         })
       });
 
@@ -110,17 +150,14 @@ export function NewProjectForm() {
   function toggleOutput(output: string, checked: boolean) {
     if (requiredOutputs.has(output)) return;
 
-    setSelectedOutputs((current) =>
-      checked ? [...current, output] : current.filter((item) => item !== output)
-    );
+    onToggleOutput(output, checked);
   }
 
-  function applyLitePreset() {
-    setSelectedOutputs([...litePackageOutputs]);
-  }
-
-  function applyFullPreset() {
-    setSelectedOutputs([...supportedV1Outputs]);
+  function updateValue(field: keyof NewProjectFormValues, value: string) {
+    setFormValues((current) => ({
+      ...current,
+      [field]: value
+    }));
   }
 
   return (
@@ -131,9 +168,14 @@ export function NewProjectForm() {
             <p className="font-mono text-xs uppercase text-ink-muted">Idea intake</p>
             <h2 className="mt-2 text-xl font-semibold">Product source material</h2>
           </div>
-          <StatusPill tone={isGenerating ? "running" : "info"} pulse={isGenerating}>
-            {isGenerating ? "Preparing run" : "Draft"}
-          </StatusPill>
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" size="sm" variant="secondary" onClick={() => setFormValues(sampleFormValues)} disabled={isGenerating}>
+              Use sample idea
+            </Button>
+            <StatusPill tone={isGenerating ? "running" : "info"} pulse={isGenerating}>
+              {isGenerating ? "Preparing run" : "Ready"}
+            </StatusPill>
+          </div>
         </div>
       </CardHeader>
       <CardBody>
@@ -142,14 +184,18 @@ export function NewProjectForm() {
             <Input
               label="Product name"
               name="product-name"
-              defaultValue="Forge Brief"
+              value={formValues.productName}
+              onChange={(event) => updateValue("productName", event.target.value)}
+              placeholder="Example: Forge Brief"
               helperText="Use the working name your team already knows."
               disabled={isGenerating}
             />
             <Input
               label="Product type"
               name="product-type"
-              defaultValue="Agency workflow tool"
+              value={formValues.productType}
+              onChange={(event) => updateValue("productType", event.target.value)}
+              placeholder="Example: mobile app, marketplace, internal tool"
               helperText="Example: marketplace, mobile app, internal tool."
               disabled={isGenerating}
             />
@@ -158,19 +204,25 @@ export function NewProjectForm() {
           <Textarea
             label="Target users"
             name="target-users"
-            defaultValue="Product strategists, agency founders, and delivery leads who need to turn messy client ideas into consistent MVP design packages."
+            value={formValues.targetUsers}
+            onChange={(event) => updateValue("targetUsers", event.target.value)}
+            placeholder="Example: Product strategists, agency founders, and delivery leads..."
             disabled={isGenerating}
           />
           <Textarea
             label="Main problem"
             name="main-problem"
-            defaultValue="Discovery outputs are inconsistent, hard to review, and usually need manual restructuring before design or engineering can use them."
+            value={formValues.mainProblem}
+            onChange={(event) => updateValue("mainProblem", event.target.value)}
+            placeholder="Example: Discovery outputs are inconsistent and hard to review..."
             disabled={isGenerating}
           />
           <Textarea
             label="Product goal"
             name="product-goal"
-            defaultValue="Generate a practical product strategy, UX plan, Figma-ready structure, landing page copy, and developer handoff from one intake."
+            value={formValues.productGoal}
+            onChange={(event) => updateValue("productGoal", event.target.value)}
+            placeholder="Example: Generate a practical product strategy, UX plan, Figma-ready structure..."
             disabled={isGenerating}
           />
 
@@ -186,12 +238,15 @@ export function NewProjectForm() {
             <div>
               <p className="font-mono text-xs font-medium uppercase text-ink-muted">Output types</p>
               <p className="mt-2 text-sm leading-6 text-ink-secondary">{outputScopeHelperText}</p>
+              <p className="mt-2 font-mono text-xs uppercase text-accent-green">
+                {selectedOutputs.length} of {supportedV1Outputs.length} artifacts selected
+              </p>
             </div>
             <div className="flex flex-wrap gap-2">
-              <Button type="button" size="sm" variant="secondary" onClick={applyLitePreset} disabled={isGenerating}>
+              <Button type="button" size="sm" variant="secondary" onClick={onSelectLitePackage} disabled={isGenerating}>
                 Lite package
               </Button>
-              <Button type="button" size="sm" variant="secondary" onClick={applyFullPreset} disabled={isGenerating}>
+              <Button type="button" size="sm" variant="secondary" onClick={onSelectFullPackage} disabled={isGenerating}>
                 Full package
               </Button>
             </div>
@@ -199,10 +254,11 @@ export function NewProjectForm() {
               {supportedV1Outputs.map((output) => (
                 <CheckboxRow
                   key={output}
-                  label={requiredOutputs.has(output) ? `${output} (required)` : output}
+                  label={output}
                   checked={selectedOutputs.includes(output)}
                   onChange={(checked) => toggleOutput(output, checked)}
                   disabled={isGenerating || requiredOutputs.has(output)}
+                  meta={requiredOutputs.has(output) ? <Badge tone="accent">Required</Badge> : null}
                 />
               ))}
             </div>
@@ -211,7 +267,9 @@ export function NewProjectForm() {
           <Textarea
             label="Preferred design style"
             name="preferred-style"
-            defaultValue="Dark technical interface, acid green accent, crisp 1px borders, minimal radius, mono labels, and a premium developer-tool SaaS feel."
+            value={formValues.preferredStyle}
+            onChange={(event) => updateValue("preferredStyle", event.target.value)}
+            placeholder="Example: Dark technical interface, acid green accent, crisp 1px borders..."
             disabled={isGenerating}
           />
 
@@ -252,12 +310,6 @@ export function NewProjectForm() {
       </CardBody>
     </Card>
   );
-}
-
-function readFormValue(formData: FormData, name: string) {
-  const value = formData.get(name);
-
-  return typeof value === "string" ? value.trim() : "";
 }
 
 function createErrorMessage(payload: GenerationRunErrorResponse | GenerationRunResponse | null) {

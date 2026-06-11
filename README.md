@@ -2,19 +2,18 @@
 
 Ship Design is an AI-powered product design agent system. It helps designers, founders, and product teams turn one product idea into a complete product design package.
 
-The system guides a user from an early idea to strategy, research, flows, screen planning, Figma-ready structure, design system direction, prototype planning, landing page strategy, and developer handoff documentation.
+The system guides a user from an early idea to strategy, research, flows, screen planning, design system direction, Figma planning, landing page copy, and developer handoff documentation.
 
 ## What Ship Design Creates
 
-1. Product strategy documentation
-2. UX research documentation
+1. Product Brief
+2. UX Docs
 3. User flows
-4. Screen inventory
-5. Figma-ready design structure
-6. Design system
-7. Prototype
-8. Landing page
-9. Developer handoff documentation
+4. Screen List
+5. Design System Plan
+6. Figma Plan
+7. Landing Page Copy
+8. Handoff Docs
 
 ## Product Positioning
 
@@ -57,8 +56,12 @@ Ship Design currently has:
 
 - Product and agent documentation
 - A Next.js app foundation
-- A local mock generation workflow
+- A real AI provider gateway with mock mode as the default
+- 8-artifact generation with Lite and Full package options
+- Provider fallback for free-first AI providers
+- Context budgeting for downstream artifact generation
+- Artifact regeneration and version history
+- Copy output, markdown export, and local mock Figma package preparation
 - A token-based dark technical UI direction
-- A real AI generation architecture plan
 
-Real AI generation, authentication, payments, persistent database storage, and live Figma API writes are intentionally not connected yet.
+Persistent database storage, authentication, payments, and live Figma API writes are not connected yet.
