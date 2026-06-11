@@ -71,7 +71,8 @@ export default async function ProjectPage({ params, searchParams }: ProjectPageP
             attemptedProviders: generationRun.attemptedProviders,
             fallbackUsed: generationRun.fallbackUsed,
             finalProvider: generationRun.finalProvider,
-            providerWarnings: generationRun.providerWarnings
+            providerWarnings: generationRun.providerWarnings,
+            providerDiagnostics: generationRun.providerDiagnostics
           }}
         />
       </AppShell>
@@ -161,7 +162,10 @@ function createLogsFromRun(run: GenerationRun): ActivityLog[] {
     id: step.id,
     time: index === 0 ? "Now" : `+${index + 1}m`,
     label: getGenerationArtifactSpec(step.id)?.title ?? step.title,
-    message: `${getGenerationArtifactSpec(step.id)?.title ?? step.title} completed using ${run.provider} (${run.mode}) with ${run.model}.`,
-    tone: step.status === "error" ? "danger" : "success"
+    message:
+      step.status === "queued"
+        ? `${getGenerationArtifactSpec(step.id)?.title ?? step.title} was skipped for this package selection.`
+        : `${getGenerationArtifactSpec(step.id)?.title ?? step.title} completed using ${run.provider} (${run.mode}) with ${run.model}.`,
+    tone: step.status === "error" ? "danger" : step.status === "queued" ? "info" : "success"
   }));
 }

@@ -19,6 +19,12 @@ export type ViewerArtifactVersion = {
   fallbackUsed: boolean;
   finalProvider: AiProviderId;
   providerWarnings: string[];
+  providerDiagnostics?: Array<{
+    provider: AiProviderId | string;
+    summary: string;
+    detail: string;
+    status?: number;
+  }>;
 };
 
 type ArtifactVersionPanelProps = {
@@ -70,12 +76,28 @@ export function ArtifactVersionPanel({ activeVersion = 1, versions = [] }: Artif
                   <p className="mt-1 text-sm leading-6 text-ink-secondary">{version.feedback}</p>
                 </div>
               ) : null}
-              {version.providerWarnings.length > 0 ? (
+              {version.providerDiagnostics && version.providerDiagnostics.length > 0 ? (
+                <div className="mt-3 border-t border-line pt-3">
+                  <p className="font-mono text-[11px] uppercase text-status-warning">Warnings</p>
+                  <div className="mt-2 grid gap-2">
+                    {version.providerDiagnostics.map((diagnostic, diagnosticIndex) => (
+                      <details key={`version-diagnostic-${version.version}-${diagnosticIndex}`} className="border border-line bg-surface-base p-3">
+                        <summary className="cursor-pointer font-mono text-xs uppercase text-status-warning">
+                          {diagnostic.summary}
+                        </summary>
+                        <p className="mt-3 max-h-40 overflow-y-auto whitespace-pre-wrap break-words text-xs leading-5 text-ink-muted">
+                          {diagnostic.detail}
+                        </p>
+                      </details>
+                    ))}
+                  </div>
+                </div>
+              ) : version.providerWarnings.length > 0 ? (
                 <div className="mt-3 border-t border-line pt-3">
                   <p className="font-mono text-[11px] uppercase text-status-warning">Warnings</p>
                   <ul className="mt-1 grid gap-1 text-sm leading-6 text-ink-muted">
-                    {version.providerWarnings.map((warning) => (
-                      <li key={warning}>- {warning}</li>
+                    {version.providerWarnings.map((warning, warningIndex) => (
+                      <li key={`version-warning-${version.version}-${warningIndex}`} className="break-words">- {warning}</li>
                     ))}
                   </ul>
                 </div>

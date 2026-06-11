@@ -1,4 +1,4 @@
-import type { AiGenerationMode, AiProviderId, AiTokenUsage } from "@/lib/ai/types";
+import type { AiGenerationMode, AiProviderDiagnostic, AiProviderId, AiTokenUsage } from "@/lib/ai/types";
 import type { GenerationArtifact } from "@/lib/generation/progress";
 
 export type ArtifactVersion = {
@@ -17,6 +17,7 @@ export type ArtifactVersion = {
   fallbackUsed: boolean;
   finalProvider: AiProviderId;
   providerWarnings: string[];
+  providerDiagnostics?: AiProviderDiagnostic[];
 };
 
 export type ArtifactVersionInput = Omit<ArtifactVersion, "version" | "createdAt"> & {
@@ -50,7 +51,8 @@ export function getActiveArtifactVersion(artifact: GenerationArtifact): Artifact
     attemptedProviders: artifact.attemptedProviders,
     fallbackUsed: artifact.fallbackUsed,
     finalProvider: artifact.finalProvider,
-    providerWarnings: artifact.providerWarnings
+    providerWarnings: artifact.providerWarnings,
+    providerDiagnostics: artifact.providerDiagnostics
   });
 }
 
@@ -86,6 +88,7 @@ export function applyActiveArtifactVersion(
     fallbackUsed: activeVersion.fallbackUsed,
     finalProvider: activeVersion.finalProvider,
     providerWarnings: activeVersion.providerWarnings,
+    providerDiagnostics: activeVersion.providerDiagnostics,
     activeVersion: activeVersion.version,
     versions: nextVersions
   };

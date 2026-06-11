@@ -29,6 +29,8 @@ export function OutputList({ outputs }: OutputListProps) {
                       ? "danger"
                       : output.status === "needs-review"
                         ? "warning"
+                        : output.status === "skipped"
+                          ? "muted"
                         : "default"
                 }
               >

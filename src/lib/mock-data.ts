@@ -26,7 +26,7 @@ export type OutputArtifact = {
   id: string;
   title: string;
   type: string;
-  status: "draft" | "ready" | "needs-review" | "error";
+  status: "draft" | "ready" | "needs-review" | "error" | "skipped";
   summary: string;
   body: string[];
 };

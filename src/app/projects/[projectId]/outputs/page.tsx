@@ -48,7 +48,8 @@ export default async function ProjectOutputsPage({ params, searchParams }: Proje
             attemptedProviders: generationRun.attemptedProviders,
             fallbackUsed: generationRun.fallbackUsed,
             finalProvider: generationRun.finalProvider,
-            providerWarnings: generationRun.providerWarnings
+            providerWarnings: generationRun.providerWarnings,
+            providerDiagnostics: generationRun.providerDiagnostics
           }}
         />
       </AppShell>

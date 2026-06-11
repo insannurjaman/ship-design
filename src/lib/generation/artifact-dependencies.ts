@@ -1,5 +1,6 @@
-import { getActiveArtifactVersion } from "@/lib/generation/artifact-versions";
 import { generationArtifactSpecs } from "@/lib/generation/artifact-renderer";
+import { formatArtifactSummaryForContext } from "@/lib/generation/artifact-summary";
+import { applyContextBudget } from "@/lib/generation/context-budget";
 import type { CreateGenerationRunRequest, GenerationArtifact, GenerationArtifactId } from "@/lib/generation/progress";
 
 export const artifactGenerationOrder = generationArtifactSpecs.map((spec) => spec.id);
@@ -50,15 +51,13 @@ export function createDependencyContext(
   const dependencyIds = dependencyMap[artifactId];
   const dependencySections = dependencyIds
     .map((dependencyId) => artifacts.find((artifact) => artifact.id === dependencyId))
-    .filter((artifact): artifact is GenerationArtifact => Boolean(artifact))
-    .map((artifact) => {
-      const version = getActiveArtifactVersion(artifact);
-
-      return [`## ${artifact.title}`, version.markdown].join("\n\n");
-    });
+    .filter((artifact): artifact is GenerationArtifact => artifact !== undefined && artifact.status !== "skipped")
+    .map((artifact) => formatArtifactSummaryForContext(artifact));
   const extraRules = getExtraDependencyRules(artifactId, input);
 
-  return [...dependencySections, extraRules].filter(Boolean).join("\n\n---\n\n");
+  const rawContext = [...dependencySections, extraRules].filter(Boolean).join("\n\n---\n\n");
+
+  return applyContextBudget(rawContext).context;
 }
 
 export function markDownstreamArtifactsNeedsReview(

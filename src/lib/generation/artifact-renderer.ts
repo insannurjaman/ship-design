@@ -1,4 +1,5 @@
 import type { AiGenerateResponse } from "@/lib/ai/types";
+import { createArtifactSummaryData } from "@/lib/generation/artifact-summary";
 import { createArtifactVersion } from "@/lib/generation/artifact-versions";
 import {
   createArtifactSummary,
@@ -155,6 +156,11 @@ export function renderGenerationArtifact(
   const markdown = normalizeMarkdownForDisplay(response.text.trim() || `# ${spec.title}\n\nNo content was generated.`);
   const body = markdownToBodyLines(markdown);
   const summary = createArtifactSummary(markdown, spec.title);
+  const summaryData = createArtifactSummaryData({
+    title: spec.title,
+    markdown,
+    fallbackSummary: summary
+  });
   const version = createArtifactVersion({
     version: 1,
     markdown,
@@ -168,7 +174,8 @@ export function renderGenerationArtifact(
     attemptedProviders: response.attemptedProviders,
     fallbackUsed: response.fallbackUsed,
     finalProvider: response.finalProvider,
-    providerWarnings: response.providerWarnings
+    providerWarnings: response.providerWarnings,
+    providerDiagnostics: response.providerDiagnostics
   });
 
   return {
@@ -188,7 +195,9 @@ export function renderGenerationArtifact(
     fallbackUsed: response.fallbackUsed,
     finalProvider: response.finalProvider,
     providerWarnings: response.providerWarnings,
+    providerDiagnostics: response.providerDiagnostics,
     activeVersion: version.version,
-    versions: [version]
+    versions: [version],
+    summaryData
   };
 }

@@ -10,7 +10,12 @@ import { CheckboxRow } from "@/components/project/checkbox-row";
 import { SegmentedControl } from "@/components/project/segmented-control";
 import { StatusPill } from "@/components/ui/status-pill";
 import { Textarea } from "@/components/ui/textarea";
-import { outputScopeHelperText, supportedV1Outputs } from "@/lib/output-scope";
+import {
+  litePackageOutputs,
+  outputScopeHelperText,
+  requiredOutputLabels,
+  supportedV1Outputs
+} from "@/lib/output-scope";
 
 type GenerationRunResponse = {
   id: string;
@@ -20,6 +25,12 @@ type GenerationRunResponse = {
   warnings: string[];
   fallbackUsed?: boolean;
   providerWarnings?: string[];
+  providerDiagnostics?: Array<{
+    provider: string;
+    summary: string;
+    detail: string;
+    status?: number;
+  }>;
 };
 
 type GenerationRunErrorResponse = {
@@ -34,6 +45,7 @@ export function NewProjectForm() {
   const [selectedOutputs, setSelectedOutputs] = useState<string[]>([...supportedV1Outputs]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [warningMessage, setWarningMessage] = useState<string | null>(null);
+  const requiredOutputs = new Set<string>(requiredOutputLabels);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -78,7 +90,7 @@ export function NewProjectForm() {
         return;
       }
 
-      const warning = payload.providerWarnings?.[0] ?? payload.warnings?.[0];
+      const warning = payload.providerDiagnostics?.[0]?.summary ?? payload.providerWarnings?.[0] ?? payload.warnings?.[0];
 
       if (warning) {
         setWarningMessage(warning);
@@ -96,9 +108,19 @@ export function NewProjectForm() {
   }
 
   function toggleOutput(output: string, checked: boolean) {
+    if (requiredOutputs.has(output)) return;
+
     setSelectedOutputs((current) =>
       checked ? [...current, output] : current.filter((item) => item !== output)
     );
+  }
+
+  function applyLitePreset() {
+    setSelectedOutputs([...litePackageOutputs]);
+  }
+
+  function applyFullPreset() {
+    setSelectedOutputs([...supportedV1Outputs]);
   }
 
   return (
@@ -165,14 +187,22 @@ export function NewProjectForm() {
               <p className="font-mono text-xs font-medium uppercase text-ink-muted">Output types</p>
               <p className="mt-2 text-sm leading-6 text-ink-secondary">{outputScopeHelperText}</p>
             </div>
+            <div className="flex flex-wrap gap-2">
+              <Button type="button" size="sm" variant="secondary" onClick={applyLitePreset} disabled={isGenerating}>
+                Lite package
+              </Button>
+              <Button type="button" size="sm" variant="secondary" onClick={applyFullPreset} disabled={isGenerating}>
+                Full package
+              </Button>
+            </div>
             <div className="grid gap-2 md:grid-cols-2">
               {supportedV1Outputs.map((output) => (
                 <CheckboxRow
                   key={output}
-                  label={output}
+                  label={requiredOutputs.has(output) ? `${output} (required)` : output}
                   checked={selectedOutputs.includes(output)}
                   onChange={(checked) => toggleOutput(output, checked)}
-                  disabled={isGenerating}
+                  disabled={isGenerating || requiredOutputs.has(output)}
                 />
               ))}
             </div>
@@ -189,7 +219,7 @@ export function NewProjectForm() {
             <div className="border border-accent-green/60 bg-accent-soft p-4" aria-live="polite">
               <Badge tone="accent">Preparing run</Badge>
               <p className="mt-3 text-sm leading-6 text-ink-secondary">
-                Creating a generation run and generating 8 artifacts.
+                Creating a generation run and generating {selectedOutputs.length} selected artifacts.
               </p>
             </div>
           ) : null}

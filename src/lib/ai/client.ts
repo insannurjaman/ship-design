@@ -6,7 +6,8 @@ import { createGroqProvider } from "./groq-provider";
 import { createHuggingFaceProvider } from "./huggingface-provider";
 import { createMockProvider } from "./mock-provider";
 import { createOpenRouterProvider } from "./openrouter-provider";
-import type { AiGenerateRequest, AiGenerateResponse, AiProvider, AiProviderId } from "./types";
+import { AiGatewayError } from "./errors";
+import type { AiGenerateRequest, AiGenerateResponse, AiProvider, AiProviderDiagnostic, AiProviderId } from "./types";
 
 function createProviders(): Record<AiProviderId, AiProvider> {
   const config = getAiGatewayConfig();
@@ -42,7 +43,8 @@ export async function generateAiText(request: AiGenerateRequest): Promise<AiGene
       attemptedProviders: ["mock"],
       fallbackUsed: false,
       finalProvider: "mock",
-      providerWarnings: []
+      providerWarnings: [],
+      providerDiagnostics: []
     };
   }
 
@@ -51,11 +53,17 @@ export async function generateAiText(request: AiGenerateRequest): Promise<AiGene
   const configuredRealProviders = realProviderOrder.filter((providerId) => providers[providerId].isConfigured());
   const attemptedProviders: AiProviderId[] = [];
   const providerWarnings: string[] = [];
+  const providerDiagnostics: AiProviderDiagnostic[] = [];
 
   if (!providers[selectedProvider].isConfigured()) {
-    providerWarnings.push(
-      `Real AI mode is enabled for ${providers[selectedProvider].displayName}, but its API key is missing.`
-    );
+    const detail = `Real AI mode is enabled for ${providers[selectedProvider].displayName}, but its API key is missing.`;
+
+    providerWarnings.push(detail);
+    providerDiagnostics.push({
+      provider: selectedProvider,
+      summary: `${providers[selectedProvider].displayName} key missing`,
+      detail
+    });
   }
 
   if (configuredRealProviders.length === 0) {
@@ -71,7 +79,15 @@ export async function generateAiText(request: AiGenerateRequest): Promise<AiGene
       attemptedProviders: ["mock"],
       fallbackUsed: true,
       finalProvider: "mock",
-      providerWarnings: finalWarnings
+      providerWarnings: finalWarnings,
+      providerDiagnostics: [
+        ...providerDiagnostics,
+        {
+          provider: "mock",
+          summary: "Final fallback provider: mock",
+          detail: finalWarnings.at(-1) ?? "Mock generation was used as the final fallback."
+        }
+      ]
     };
   }
 
@@ -88,6 +104,16 @@ export async function generateAiText(request: AiGenerateRequest): Promise<AiGene
             `${provider.displayName} was used after fallback from ${providers[selectedProvider].displayName}.`
           ]
         : providerWarnings;
+      const finalDiagnostics = fallbackUsed
+        ? [
+            ...providerDiagnostics,
+            {
+              provider: providerId,
+              summary: `Final fallback provider: ${provider.displayName}`,
+              detail: `${provider.displayName} was used after fallback from ${providers[selectedProvider].displayName}.`
+            }
+          ]
+        : providerDiagnostics;
 
       return {
         ...response,
@@ -95,10 +121,14 @@ export async function generateAiText(request: AiGenerateRequest): Promise<AiGene
         attemptedProviders,
         fallbackUsed,
         finalProvider: providerId,
-        providerWarnings: finalProviderWarnings
+        providerWarnings: finalProviderWarnings,
+        providerDiagnostics: finalDiagnostics
       };
     } catch (error) {
-      providerWarnings.push(`${provider.displayName} failed: ${formatProviderError(error)}`);
+      const detail = formatProviderError(error);
+
+      providerWarnings.push(`${provider.displayName} failed: ${detail}`);
+      providerDiagnostics.push(createProviderDiagnostic(providerId, provider.displayName, error, detail));
     }
   }
 
@@ -114,7 +144,15 @@ export async function generateAiText(request: AiGenerateRequest): Promise<AiGene
     attemptedProviders: [...attemptedProviders, "mock"],
     fallbackUsed: true,
     finalProvider: "mock",
-    providerWarnings: finalWarnings
+    providerWarnings: finalWarnings,
+    providerDiagnostics: [
+      ...providerDiagnostics,
+      {
+        provider: "mock",
+        summary: "Final fallback provider: mock",
+        detail: finalWarnings.at(-1) ?? "Mock generation was used as the final fallback."
+      }
+    ]
   };
 }
 
@@ -124,4 +162,40 @@ function formatProviderError(error: unknown) {
   }
 
   return "Unknown provider error.";
+}
+
+function createProviderDiagnostic(
+  provider: AiProviderId,
+  displayName: string,
+  error: unknown,
+  detail: string
+): AiProviderDiagnostic {
+  const status = error instanceof AiGatewayError ? error.status : undefined;
+
+  return {
+    provider,
+    summary: summarizeProviderError(provider, displayName, detail, status),
+    detail,
+    status
+  };
+}
+
+function summarizeProviderError(
+  provider: AiProviderId,
+  displayName: string,
+  detail: string,
+  status?: number
+) {
+  const lower = detail.toLowerCase();
+
+  if (provider === "gemini" && (status === 429 || lower.includes("quota"))) return "Gemini quota exceeded";
+  if (provider === "groq" && (status === 413 || lower.includes("request too large") || lower.includes("tokens per minute"))) {
+    return "Groq request too large";
+  }
+  if (provider === "openrouter" && (lower.includes("unavailable") || lower.includes("not available") || lower.includes("model"))) {
+    return "OpenRouter model unavailable";
+  }
+  if (status) return `${displayName} HTTP ${status}`;
+
+  return `${displayName} failed`;
 }

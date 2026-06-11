@@ -24,7 +24,7 @@ export default function NewProjectPage() {
             </CardHeader>
             <CardBody className="grid gap-3">
               <div className="grid gap-3">
-                <p className="font-mono text-xs uppercase text-accent-green">Generated package</p>
+                <p className="font-mono text-xs uppercase text-accent-green">Available package outputs</p>
                 {mockOutputs
                   .filter((output) => supportedV1Outputs.includes(output.title as (typeof supportedV1Outputs)[number]))
                   .map((output) => (
@@ -33,7 +33,7 @@ export default function NewProjectPage() {
                         <span className="font-mono text-xs uppercase text-accent-green">
                           {output.type}
                         </span>
-                        <Badge tone="success">Generated</Badge>
+                        <Badge tone="success">Selectable</Badge>
                       </div>
                       <p className="mt-2 text-sm text-ink-secondary">{output.title}</p>
                     </div>

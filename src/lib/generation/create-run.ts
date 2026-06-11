@@ -1,6 +1,7 @@
 import "server-only";
 
 import { generateAiText } from "@/lib/ai/client";
+import { createArtifactSummaryData } from "@/lib/generation/artifact-summary";
 import { createArtifactVersion } from "@/lib/generation/artifact-versions";
 import { createDependencyContext } from "@/lib/generation/artifact-dependencies";
 import {
@@ -16,12 +17,19 @@ import {
   type GenerationRun
 } from "@/lib/generation/progress";
 import { saveGenerationRun } from "@/lib/generation/run-store";
+import { normalizeSelectedOutputIds } from "@/lib/output-scope";
 
 export async function createGenerationRun(input: CreateGenerationRunRequest): Promise<GenerationRun> {
   const runId = createRunId();
   const artifacts: GenerationArtifact[] = [];
+  const selectedOutputIds = normalizeSelectedOutputIds(input.outputTypes);
 
   for (const spec of generationArtifactSpecs) {
+    if (!selectedOutputIds.has(spec.id)) {
+      artifacts.push(createSkippedArtifact(spec));
+      continue;
+    }
+
     try {
       const response = await generateAiText({
         messages: [
@@ -58,13 +66,15 @@ export async function createGenerationRun(input: CreateGenerationRunRequest): Pr
   const firstArtifact = artifacts[0];
   const warnings = Array.from(new Set(artifacts.flatMap((artifact) => artifact.warnings)));
   const providerWarnings = Array.from(new Set(artifacts.flatMap((artifact) => artifact.providerWarnings)));
+  const providerDiagnostics = uniqueDiagnostics(artifacts.flatMap((artifact) => artifact.providerDiagnostics ?? []));
   const attemptedProviders = Array.from(new Set(artifacts.flatMap((artifact) => artifact.attemptedProviders)));
   const fallbackUsed = artifacts.some((artifact) => artifact.fallbackUsed);
   const finalProvider = artifacts.find((artifact) => artifact.finalProvider !== "mock")?.finalProvider ?? firstArtifact?.finalProvider ?? "mock";
+  const generatedCount = artifacts.filter((artifact) => artifact.status !== "skipped").length;
   const run: GenerationRun = {
     id: runId,
     status: artifacts.some((artifact) => artifact.status === "error") ? "error" : "complete",
-    progress: getGenerationProgress(artifacts.length),
+    progress: getGenerationProgress(generatedCount),
     createdAt: new Date().toISOString(),
     input,
     artifacts,
@@ -76,10 +86,65 @@ export async function createGenerationRun(input: CreateGenerationRunRequest): Pr
     attemptedProviders,
     fallbackUsed,
     finalProvider,
-    providerWarnings
+    providerWarnings,
+    providerDiagnostics
   };
 
   return saveGenerationRun(run);
+}
+
+function createSkippedArtifact(spec: (typeof generationArtifactSpecs)[number]): GenerationArtifact {
+  const markdown = [
+    `# ${spec.title}`,
+    "",
+    "This optional artifact was skipped for this generation run.",
+    "",
+    "Generate a Full package or add generate-later support in a future phase to create it."
+  ].join("\n");
+  const body = ["This optional artifact was skipped for this generation run."];
+  const summary = "Skipped for this run.";
+  const summaryData = createArtifactSummaryData({
+    title: spec.title,
+    markdown,
+    fallbackSummary: summary
+  });
+  const version = createArtifactVersion({
+    version: 1,
+    markdown,
+    summary,
+    body,
+    provider: "mock",
+    model: "skipped",
+    mode: "mock",
+    warnings: [],
+    attemptedProviders: [],
+    fallbackUsed: false,
+    finalProvider: "mock",
+    providerWarnings: [],
+    providerDiagnostics: []
+  });
+
+  return {
+    id: spec.id,
+    title: spec.title,
+    type: spec.type,
+    status: "skipped",
+    summary,
+    body,
+    markdown,
+    provider: "mock",
+    model: "skipped",
+    mode: "mock",
+    warnings: [],
+    attemptedProviders: [],
+    fallbackUsed: false,
+    finalProvider: "mock",
+    providerWarnings: [],
+    providerDiagnostics: [],
+    activeVersion: version.version,
+    versions: [version],
+    summaryData
+  };
 }
 
 function createFailedArtifact(
@@ -111,7 +176,14 @@ function createFailedArtifact(
     attemptedProviders: [],
     fallbackUsed: false,
     finalProvider: "mock",
-    providerWarnings: [message]
+    providerWarnings: [message],
+    providerDiagnostics: [
+      {
+        provider: "mock",
+        summary: "Artifact generation failed",
+        detail: message
+      }
+    ]
   });
 
   return {
@@ -130,9 +202,28 @@ function createFailedArtifact(
     fallbackUsed: version.fallbackUsed,
     finalProvider: version.finalProvider,
     providerWarnings: version.providerWarnings,
+    providerDiagnostics: version.providerDiagnostics,
     activeVersion: version.version,
-    versions: [version]
+    versions: [version],
+    summaryData: createArtifactSummaryData({
+      title: spec.title,
+      markdown,
+      fallbackSummary: version.summary
+    })
   };
+}
+
+function uniqueDiagnostics<T extends { provider: string; summary: string; detail: string }>(diagnostics: T[]) {
+  const seen = new Set<string>();
+
+  return diagnostics.filter((diagnostic) => {
+    const key = `${diagnostic.provider}:${diagnostic.summary}:${diagnostic.detail}`;
+
+    if (seen.has(key)) return false;
+
+    seen.add(key);
+    return true;
+  });
 }
 
 function createRunId() {

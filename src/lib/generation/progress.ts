@@ -1,4 +1,5 @@
-import type { AiGenerationMode, AiProviderId, AiTokenUsage } from "@/lib/ai/types";
+import type { AiGenerationMode, AiProviderDiagnostic, AiProviderId, AiTokenUsage } from "@/lib/ai/types";
+import type { ArtifactSummaryData } from "@/lib/generation/artifact-summary";
 import type { ArtifactVersion } from "@/lib/generation/artifact-versions";
 
 export type CreateGenerationRunRequest = {
@@ -12,7 +13,7 @@ export type CreateGenerationRunRequest = {
   preferredStyle?: string;
 };
 
-export type GenerationArtifactStatus = "ready" | "needs-review" | "error";
+export type GenerationArtifactStatus = "ready" | "needs-review" | "error" | "skipped";
 
 export type GenerationArtifactId =
   | "product-brief"
@@ -41,8 +42,10 @@ export type GenerationArtifact = {
   fallbackUsed: boolean;
   finalProvider: AiProviderId;
   providerWarnings: string[];
+  providerDiagnostics?: AiProviderDiagnostic[];
   activeVersion: number;
   versions: ArtifactVersion[];
+  summaryData?: ArtifactSummaryData;
 };
 
 export type GenerationStepStatus = "queued" | "running" | "complete" | "error";
@@ -70,6 +73,7 @@ export type GenerationRun = {
   fallbackUsed: boolean;
   finalProvider: AiProviderId;
   providerWarnings: string[];
+  providerDiagnostics?: AiProviderDiagnostic[];
 };
 
 export const generationStepTemplates: Array<Pick<GenerationStep, "id" | "title">> = [
@@ -173,8 +177,8 @@ export function createGenerationStepsFromArtifacts(artifacts: GenerationArtifact
 
     return {
       ...step,
-      status: artifact.status === "error" ? "error" : "complete",
-      progress: artifact.status === "error" ? 0 : 100
+      status: artifact.status === "error" ? "error" : artifact.status === "skipped" ? "queued" : "complete",
+      progress: artifact.status === "error" || artifact.status === "skipped" ? 0 : 100
     };
   });
 }

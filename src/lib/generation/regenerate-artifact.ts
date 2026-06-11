@@ -21,6 +21,7 @@ import {
   markdownToBodyLines,
   normalizeMarkdownForDisplay
 } from "@/lib/generation/markdown-cleanup";
+import { createArtifactSummaryData } from "@/lib/generation/artifact-summary";
 import type { GenerationArtifact, GenerationRun } from "@/lib/generation/progress";
 import { getGenerationRun, updateGenerationRun } from "@/lib/generation/run-store";
 
@@ -69,6 +70,12 @@ export async function regenerateArtifact(
     });
   }
 
+  if (artifact.status === "skipped") {
+    throw new RegenerateArtifactError("Skipped artifacts cannot be regenerated yet. Generate a new package with this output selected.", 400, {
+      artifactId: "This artifact was skipped in the original run."
+    });
+  }
+
   const currentVersion = getActiveArtifactVersion(artifact);
   const response = await generateAiText({
     messages: [
@@ -99,6 +106,11 @@ export async function regenerateArtifact(
   const markdown = normalizeMarkdownForDisplay(response.text.trim() || currentVersion.markdown);
   const body = markdownToBodyLines(markdown);
   const summary = createArtifactSummary(markdown, spec.title);
+  const summaryData = createArtifactSummaryData({
+    title: spec.title,
+    markdown,
+    fallbackSummary: summary
+  });
   const nextVersion = createArtifactVersion({
     version: getNextArtifactVersionNumber(artifact),
     markdown,
@@ -113,9 +125,13 @@ export async function regenerateArtifact(
     attemptedProviders: response.attemptedProviders,
     fallbackUsed: response.fallbackUsed,
     finalProvider: response.finalProvider,
-    providerWarnings: response.providerWarnings
+    providerWarnings: response.providerWarnings,
+    providerDiagnostics: response.providerDiagnostics
   });
-  const updatedArtifact = applyActiveArtifactVersion(artifact, nextVersion);
+  const updatedArtifact = {
+    ...applyActiveArtifactVersion(artifact, nextVersion),
+    summaryData
+  };
   const updatedArtifacts = markDownstreamArtifactsNeedsReview(
     run.artifacts.map((item, index) => (index === artifactIndex ? updatedArtifact : item)),
     updatedArtifact.id
@@ -170,6 +186,7 @@ function recalculateRunMetadata(run: GenerationRun): GenerationRun {
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0];
   const warnings = Array.from(new Set(run.artifacts.flatMap((artifact) => artifact.warnings)));
   const providerWarnings = Array.from(new Set(run.artifacts.flatMap((artifact) => artifact.providerWarnings)));
+  const providerDiagnostics = uniqueDiagnostics(run.artifacts.flatMap((artifact) => artifact.providerDiagnostics ?? []));
   const attemptedProviders = Array.from(new Set(run.artifacts.flatMap((artifact) => artifact.attemptedProviders)));
   const fallbackUsed = run.artifacts.some((artifact) => artifact.fallbackUsed);
   const finalProvider =
@@ -186,8 +203,22 @@ function recalculateRunMetadata(run: GenerationRun): GenerationRun {
     attemptedProviders,
     fallbackUsed,
     finalProvider,
-    providerWarnings
+    providerWarnings,
+    providerDiagnostics
   };
+}
+
+function uniqueDiagnostics<T extends { provider: string; summary: string; detail: string }>(diagnostics: T[]) {
+  const seen = new Set<string>();
+
+  return diagnostics.filter((diagnostic) => {
+    const key = `${diagnostic.provider}:${diagnostic.summary}:${diagnostic.detail}`;
+
+    if (seen.has(key)) return false;
+
+    seen.add(key);
+    return true;
+  });
 }
 
 function normalizeFeedback(feedback?: string) {

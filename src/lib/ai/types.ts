@@ -30,6 +30,13 @@ export type AiTokenUsage = {
   totalTokens?: number;
 };
 
+export type AiProviderDiagnostic = {
+  provider: AiProviderId;
+  summary: string;
+  detail: string;
+  status?: number;
+};
+
 export type AiGenerateResponse = {
   provider: AiProviderId;
   model: string;
@@ -42,6 +49,7 @@ export type AiGenerateResponse = {
   fallbackUsed: boolean;
   finalProvider: AiProviderId;
   providerWarnings: string[];
+  providerDiagnostics?: AiProviderDiagnostic[];
 };
 
 export type AiProvider = {

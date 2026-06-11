@@ -29,6 +29,12 @@ type AgentWorkflowSimulationProps = {
     fallbackUsed?: boolean;
     finalProvider?: AiProviderId;
     providerWarnings?: string[];
+    providerDiagnostics?: Array<{
+      provider: AiProviderId | string;
+      summary: string;
+      detail: string;
+      status?: number;
+    }>;
   };
 };
 
@@ -80,6 +86,10 @@ export function AgentWorkflowSimulation({
   const hasRecoveredWarning = progress >= 44 && progress < 62;
   const viewerHref = outputViewerHref ?? `/projects/${project.id}/outputs?generated=1`;
   const runWarnings = runInfo?.fallbackUsed ? runInfo.providerWarnings ?? runInfo.warnings ?? [] : [];
+  const providerDiagnostics = runInfo?.providerDiagnostics ?? [];
+  const generatedCount = outputs.filter((output) => output.status !== "skipped" && output.status !== "error").length;
+  const skippedCount = outputs.filter((output) => output.status === "skipped").length;
+  const failedCount = outputs.filter((output) => output.status === "error").length;
 
   const message = useMemo(() => {
     if (isComplete) {
@@ -214,21 +224,49 @@ export function AgentWorkflowSimulation({
           description={
             isComplete
               ? runInfo
-                ? `Run stored in memory. Provider: ${runInfo.provider}. Mode: ${runInfo.mode}. Model: ${runInfo.model}. Fallback: ${runInfo.fallbackUsed ? "yes" : "no"}.`
+                ? `Run stored in memory. ${generatedCount} of ${outputs.length} artifacts generated. Final provider: ${runInfo.finalProvider ?? runInfo.provider}. Fallback: ${runInfo.fallbackUsed ? "yes" : "no"}.`
                 : "The generated package is ready for review. No backend, API, or database was used."
               : "This demo uses local mock timing so the team can review the product flow before real AI integration."
           }
         />
 
-        {runWarnings.map((warning) => (
+        {runInfo?.fallbackUsed ? (
           <StatePanel
-            key={warning}
             tone="warning"
             label="Provider warning"
-            title="Generation used fallback behavior"
-            description={warning}
+            title="Run complete with fallback"
+            description={`${generatedCount} artifacts generated. ${skippedCount} skipped. ${failedCount} failed. Final provider: ${runInfo.finalProvider ?? runInfo.provider}.`}
           />
-        ))}
+        ) : null}
+
+        {providerDiagnostics.length > 0 ? (
+          <Card>
+            <CardHeader>
+              <h2 className="font-mono text-sm uppercase text-status-warning">Provider details</h2>
+            </CardHeader>
+            <CardBody className="grid gap-2">
+              {providerDiagnostics.map((diagnostic, diagnosticIndex) => (
+                <details key={`workflow-provider-diagnostic-${diagnosticIndex}`} className="border border-line bg-surface-base p-3">
+                  <summary className="cursor-pointer font-mono text-xs uppercase text-status-warning">
+                    {diagnostic.summary}
+                  </summary>
+                  <p className="mt-3 max-h-40 overflow-y-auto whitespace-pre-wrap break-words text-xs leading-5 text-ink-muted">
+                    {diagnostic.detail}
+                  </p>
+                </details>
+              ))}
+            </CardBody>
+          </Card>
+        ) : runWarnings.length > 0 ? (
+          <details className="border border-line bg-surface-base p-3">
+            <summary className="cursor-pointer font-mono text-xs uppercase text-status-warning">Provider details</summary>
+            <ul className="mt-3 grid max-h-40 gap-2 overflow-y-auto text-sm leading-6 text-ink-muted">
+              {runWarnings.map((warning, warningIndex) => (
+                <li key={`workflow-warning-${warningIndex}`} className="break-words">- {warning}</li>
+              ))}
+            </ul>
+          </details>
+        ) : null}
 
         {hasRecoveredWarning ? (
           <StatePanel

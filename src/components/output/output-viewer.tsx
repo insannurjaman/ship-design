@@ -26,6 +26,12 @@ type ViewerOutputArtifact = OutputArtifact & {
   fallbackUsed?: boolean;
   finalProvider?: AiProviderId;
   providerWarnings?: string[];
+  providerDiagnostics?: Array<{
+    provider: AiProviderId | string;
+    summary: string;
+    detail: string;
+    status?: number;
+  }>;
   activeVersion?: number;
   versions?: ViewerArtifactVersion[];
 };
@@ -48,6 +54,12 @@ type OutputViewerProps = {
     fallbackUsed?: boolean;
     finalProvider?: AiProviderId;
     providerWarnings?: string[];
+    providerDiagnostics?: Array<{
+      provider: AiProviderId | string;
+      summary: string;
+      detail: string;
+      status?: number;
+    }>;
   };
   regenerateHref?: string;
   runId?: string;
@@ -69,7 +81,10 @@ export function OutputViewer({
   const [regenerationError, setRegenerationError] = useState<string | null>(null);
   const [regenerationNotice, setRegenerationNotice] = useState<string | null>(null);
 
-  const markdown = viewerOutputs
+  const generatedViewerOutputs = viewerOutputs.filter((output) => output.status !== "skipped");
+  const skippedViewerOutputs = viewerOutputs.filter((output) => output.status === "skipped");
+  const markdown = [
+    generatedViewerOutputs
     .map((output) => [
       `# ${output.title}`,
       "",
@@ -77,9 +92,18 @@ export function OutputViewer({
       "",
       output.markdown ?? output.body.map((paragraph) => `- ${paragraph}`).join("\n")
     ].join("\n"))
-    .join("\n\n---\n\n");
+    .join("\n\n---\n\n"),
+    skippedViewerOutputs.length > 0
+      ? [
+          "# Skipped artifacts",
+          "",
+          ...skippedViewerOutputs.map((output) => `- ${output.title}: skipped for this run.`)
+        ].join("\n")
+      : ""
+  ].filter(Boolean).join("\n\n---\n\n");
   const fallbackUsed = Boolean(runInfo?.fallbackUsed);
   const providerWarnings = runInfo?.providerWarnings ?? [];
+  const providerDiagnostics = runInfo?.providerDiagnostics ?? [];
   const warningText = createProviderWarningText(runInfo);
   const canRegenerate = Boolean(runId);
 
@@ -182,6 +206,8 @@ export function OutputViewer({
                     ? "danger"
                     : output.status === "needs-review"
                       ? "warning"
+                      : output.status === "skipped"
+                        ? "muted"
                       : "default"
               }
             >
@@ -193,7 +219,7 @@ export function OutputViewer({
         <div className="border border-line bg-surface-base p-5 sm:p-6">
           <ArtifactContentRenderer markdown={output.markdown ?? createMarkdownFromOutput(output)} />
         </div>
-        {canRegenerate ? (
+        {canRegenerate && output.status !== "skipped" ? (
           <RegenerateArtifactDialog
             artifactTitle={output.title}
             disabled={Boolean(regeneratingArtifactId)}
@@ -318,6 +344,8 @@ export function OutputViewer({
                         ? "warning"
                         : output.status === "error"
                           ? "danger"
+                          : output.status === "skipped"
+                            ? "muted"
                           : "muted"
                   }
                 >
@@ -333,12 +361,32 @@ export function OutputViewer({
             <CardBody>
               <Badge tone="warning">Provider warning</Badge>
               <p className="mt-3 text-sm leading-6 text-ink-secondary">{warningText}</p>
-              {providerWarnings.length > 0 ? (
-                <ul className="mt-3 grid gap-2 text-sm leading-6 text-ink-muted">
-                  {providerWarnings.map((warning, warningIndex) => (
-                    <li key={`provider-warning-${warningIndex}`}>- {warning}</li>
+              <p className="mt-2 text-sm leading-6 text-ink-muted">
+                {generatedViewerOutputs.length} of {viewerOutputs.length} artifacts generated.
+                {skippedViewerOutputs.length > 0 ? ` ${skippedViewerOutputs.length} skipped by package selection.` : ""}
+              </p>
+              {providerDiagnostics.length > 0 ? (
+                <div className="mt-3 grid gap-2">
+                  {providerDiagnostics.map((diagnostic, diagnosticIndex) => (
+                    <details key={`provider-diagnostic-${diagnosticIndex}`} className="border border-line bg-surface-base p-3">
+                      <summary className="cursor-pointer font-mono text-xs uppercase text-status-warning">
+                        {diagnostic.summary}
+                      </summary>
+                      <p className="mt-3 max-h-40 overflow-y-auto whitespace-pre-wrap break-words text-xs leading-5 text-ink-muted">
+                        {diagnostic.detail}
+                      </p>
+                    </details>
                   ))}
-                </ul>
+                </div>
+              ) : providerWarnings.length > 0 ? (
+                <details className="mt-3 border border-line bg-surface-base p-3">
+                  <summary className="cursor-pointer font-mono text-xs uppercase text-status-warning">View details</summary>
+                  <ul className="mt-3 grid max-h-40 gap-2 overflow-y-auto text-sm leading-6 text-ink-muted">
+                    {providerWarnings.map((warning, warningIndex) => (
+                      <li key={`provider-warning-${warningIndex}`} className="break-words">- {warning}</li>
+                    ))}
+                  </ul>
+                </details>
               ) : null}
             </CardBody>
           </Card>
