@@ -90,16 +90,17 @@ export function AgentWorkflowSimulation({
   const generatedCount = outputs.filter((output) => output.status !== "skipped" && output.status !== "error").length;
   const skippedCount = outputs.filter((output) => output.status === "skipped").length;
   const failedCount = outputs.filter((output) => output.status === "error").length;
+  const completionLabel = runInfo?.fallbackUsed ? "Run completed with fallback" : "Run complete";
 
   const message = useMemo(() => {
     if (isComplete) {
       return runInfo
-        ? "Ship Design finished this generation run. Review the generated artifacts, provider details, and output package."
+        ? `${generatedCount} artifacts are ready. Review the package, provider details, and generated outputs.`
         : "Ship Design finished the local mock pipeline. Review, export, or send the generated package to Figma.";
     }
 
     return stepMessages[Math.min(runningIndex, stepMessages.length - 1)];
-  }, [isComplete, runningIndex, runInfo]);
+  }, [generatedCount, isComplete, runningIndex, runInfo]);
 
   function getAgentState(index: number) {
     if (index < completedAgents || isComplete) return "complete";
@@ -219,8 +220,8 @@ export function AgentWorkflowSimulation({
 
         <StatePanel
           tone={isComplete ? "success" : "info"}
-          label={isComplete ? "Run complete" : "Run status"}
-          title={isComplete ? "Artifacts saved locally" : "Local generation active"}
+          label={isComplete ? completionLabel : "Run status"}
+          title={isComplete ? `${generatedCount} of ${outputs.length} artifacts generated` : "Local generation active"}
           description={
             isComplete
               ? runInfo
@@ -234,7 +235,7 @@ export function AgentWorkflowSimulation({
           <StatePanel
             tone="warning"
             label="Provider warning"
-            title="Run complete with fallback"
+            title="Run completed with fallback"
             description={`${generatedCount} artifacts generated. ${skippedCount} skipped. ${failedCount} failed. Final provider: ${runInfo.finalProvider ?? runInfo.provider}.`}
           />
         ) : null}
