@@ -15,6 +15,7 @@ import {
   requiredOutputLabels,
   supportedV1Outputs
 } from "@/lib/output-scope";
+import { platformLabels, type GenerationPlatform } from "@/lib/platforms";
 
 type GenerationRunResponse = {
   id: string;
@@ -48,6 +49,8 @@ export type NewProjectFormValues = {
 
 type NewProjectFormProps = {
   selectedOutputs: string[];
+  platform: GenerationPlatform | "";
+  onPlatformChange: (platform: GenerationPlatform | "") => void;
   onToggleOutput: (output: string, checked: boolean) => void;
   onSelectLitePackage: () => void;
   onSelectFullPackage: () => void;
@@ -77,15 +80,17 @@ const sampleFormValues: NewProjectFormValues = {
 
 export function NewProjectForm({
   selectedOutputs,
+  platform,
+  onPlatformChange,
   onToggleOutput,
   onSelectLitePackage,
   onSelectFullPackage
 }: NewProjectFormProps) {
   const router = useRouter();
   const [isGenerating, setIsGenerating] = useState(false);
-  const [platform, setPlatform] = useState("Both");
   const [formValues, setFormValues] = useState<NewProjectFormValues>(emptyFormValues);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [platformError, setPlatformError] = useState<string | null>(null);
   const [warningMessage, setWarningMessage] = useState<string | null>(null);
   const requiredOutputs = new Set<string>(requiredOutputLabels);
 
@@ -93,7 +98,14 @@ export function NewProjectForm({
     event.preventDefault();
     setIsGenerating(true);
     setErrorMessage(null);
+    setPlatformError(null);
     setWarningMessage(null);
+
+    if (!platform) {
+      setPlatformError("Choose where this product will be designed first.");
+      setIsGenerating(false);
+      return;
+    }
 
     try {
       const response = await fetch("/api/generation-runs", {
@@ -169,7 +181,17 @@ export function NewProjectForm({
             <h2 className="mt-2 text-xl font-semibold">Product source material</h2>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button type="button" size="sm" variant="secondary" onClick={() => setFormValues(sampleFormValues)} disabled={isGenerating}>
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              onClick={() => {
+                setFormValues(sampleFormValues);
+                onPlatformChange("mobile");
+                setPlatformError(null);
+              }}
+              disabled={isGenerating}
+            >
               Use sample idea
             </Button>
             <StatusPill tone={isGenerating ? "running" : "info"} pulse={isGenerating}>
@@ -228,11 +250,23 @@ export function NewProjectForm({
 
           <SegmentedControl
             label="Platform"
-            options={["Web", "Mobile", "Both"]}
+            options={[
+              { label: platformLabels.mobile, value: "mobile" },
+              { label: platformLabels.desktop, value: "desktop" }
+            ]}
             value={platform}
-            onChange={setPlatform}
+            onChange={(value) => {
+              onPlatformChange(value as GenerationPlatform);
+              setPlatformError(null);
+            }}
             disabled={isGenerating}
           />
+          {platformError ? (
+            <div className="border border-status-warning/70 bg-status-warning/10 p-4" aria-live="polite">
+              <Badge tone="warning">Platform required</Badge>
+              <p className="mt-3 text-sm leading-6 text-ink-secondary">{platformError}</p>
+            </div>
+          ) : null}
 
           <div className="grid gap-3">
             <div>

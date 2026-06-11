@@ -138,11 +138,56 @@ export function createArtifactPrompt(
     "",
     "Output instructions:",
     ...spec.instructions.map((instruction) => `- ${instruction}`),
+    ...getPlatformInstructions(input.platform, spec).map((instruction) => `- ${instruction}`),
     "- Do not mention that you are an AI model.",
     "- Do not invent backend integrations, auth, payment, or database requirements.",
     "- Return only the artifact markdown.",
     dependencyContext ? ["", "Dependency context:", dependencyContext].join("\n") : ""
   ].join("\n");
+}
+
+function getPlatformInstructions(
+  platform: CreateGenerationRunRequest["platform"],
+  spec: GenerationArtifactSpec
+) {
+  const platformLabel = platform === "mobile" ? "mobile app" : "desktop web";
+  const shared = [`Design for one target platform only: ${platformLabel}. Do not create combined mobile and desktop guidance.`];
+
+  if (platform === "mobile") {
+    if (spec.id === "screen-list") {
+      return [...shared, "Prioritize mobile screens, mobile navigation, compact states, and mobile-first interaction patterns."];
+    }
+
+    if (spec.id === "design-system-plan") {
+      return [...shared, "Include mobile-first component sizing, tap targets, spacing, density, and responsive constraints."];
+    }
+
+    if (spec.id === "figma-plan") {
+      return [...shared, "Reference mobile frame previews and mobile prototype structure only."];
+    }
+
+    if (spec.id === "handoff-docs") {
+      return [...shared, "Include mobile implementation notes, mobile states, and mobile QA checks."];
+    }
+  }
+
+  if (spec.id === "screen-list") {
+    return [...shared, "Prioritize desktop/web screens, dashboard layouts, navigation structure, and desktop interaction states."];
+  }
+
+  if (spec.id === "design-system-plan") {
+    return [...shared, "Include desktop/web component sizing, layout density, keyboard/focus behavior, and responsive desktop constraints."];
+  }
+
+  if (spec.id === "figma-plan") {
+    return [...shared, "Reference desktop/web frame previews and desktop prototype structure only."];
+  }
+
+  if (spec.id === "handoff-docs") {
+    return [...shared, "Include responsive desktop implementation notes, desktop states, and web QA checks."];
+  }
+
+  return shared;
 }
 
 export function getGenerationArtifactSpec(artifactId: GenerationArtifact["id"]) {

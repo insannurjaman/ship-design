@@ -1,6 +1,7 @@
 import type { AiGenerationMode, AiProviderDiagnostic, AiProviderId, AiTokenUsage } from "@/lib/ai/types";
 import type { ArtifactSummaryData } from "@/lib/generation/artifact-summary";
 import type { ArtifactVersion } from "@/lib/generation/artifact-versions";
+import type { GenerationPlatform } from "@/lib/platforms";
 
 export type CreateGenerationRunRequest = {
   productName: string;
@@ -8,7 +9,7 @@ export type CreateGenerationRunRequest = {
   targetUsers: string;
   mainProblem: string;
   productGoal: string;
-  platform: "Web" | "Mobile" | "Both" | string;
+  platform: GenerationPlatform;
   outputTypes?: string[];
   preferredStyle?: string;
 };

@@ -21,6 +21,13 @@ Ship Design is for people who need to move from product intent to design executi
 
 It does not replace designers. It gives teams a structured design partner that can ask better questions, organize decisions, produce useful artifacts, and prepare work for Figma and engineering.
 
+Ship Design V1 generates one target platform per run:
+
+- Mobile
+- Desktop
+
+Users can create another run later for the other platform.
+
 ## Visual Direction
 
 Ship Design should feel like a premium technical design tool:

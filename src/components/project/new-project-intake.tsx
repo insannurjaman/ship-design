@@ -11,6 +11,7 @@ import {
   requiredOutputLabels,
   supportedV1Outputs
 } from "@/lib/output-scope";
+import { getPlatformLabel, type GenerationPlatform } from "@/lib/platforms";
 
 const outputTypes: Record<string, string> = {
   "Product Brief": "Strategy",
@@ -25,6 +26,7 @@ const outputTypes: Record<string, string> = {
 
 export function NewProjectIntake() {
   const [selectedOutputs, setSelectedOutputs] = useState<string[]>([...litePackageOutputs]);
+  const [platform, setPlatform] = useState<GenerationPlatform | "">("");
   const requiredOutputs = useMemo(() => new Set<string>(requiredOutputLabels), []);
   const selectedSet = useMemo(() => new Set(selectedOutputs), [selectedOutputs]);
   const selectedArtifacts = supportedV1Outputs.filter((output) => selectedSet.has(output));
@@ -54,6 +56,8 @@ export function NewProjectIntake() {
     <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
       <NewProjectForm
         selectedOutputs={selectedOutputs}
+        platform={platform}
+        onPlatformChange={setPlatform}
         onToggleOutput={toggleOutput}
         onSelectLitePackage={applyLitePreset}
         onSelectFullPackage={applyFullPreset}
@@ -69,6 +73,13 @@ export function NewProjectIntake() {
             <div className="grid grid-cols-2 gap-3">
               <PreviewMetric label="Package size" value={`${selectedOutputs.length} / ${supportedV1Outputs.length}`} />
               <PreviewMetric label="AI calls" value={`${selectedOutputs.length}`} />
+            </div>
+
+            <div className="border border-line bg-surface-base p-3">
+              <p className="font-mono text-[11px] uppercase text-ink-muted">Selected platform</p>
+              <p className={platform ? "mt-2 font-mono text-sm uppercase text-accent-green" : "mt-2 text-sm text-ink-muted"}>
+                {getPlatformLabel(platform)}
+              </p>
             </div>
 
             <div className="border border-accent-green/60 bg-accent-soft p-3">

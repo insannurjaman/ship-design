@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { createGenerationRun } from "@/lib/generation/create-run";
 import type { CreateGenerationRunRequest } from "@/lib/generation/progress";
+import { isGenerationPlatform } from "@/lib/platforms";
 
 type FieldErrors = Record<string, string>;
 
@@ -66,8 +67,7 @@ function validateCreateGenerationRunRequest(payload: unknown):
     "productType",
     "targetUsers",
     "mainProblem",
-    "productGoal",
-    "platform"
+    "productGoal"
   ] as const;
 
   for (const field of requiredFields) {
@@ -76,10 +76,25 @@ function validateCreateGenerationRunRequest(payload: unknown):
     }
   }
 
+  if (!isGenerationPlatform(value.platform)) {
+    fieldErrors.platform = "Choose where this product will be designed first.";
+  }
+
   if (Object.keys(fieldErrors).length > 0) {
     return {
       ok: false,
       fieldErrors
+    };
+  }
+
+  const platform = value.platform;
+
+  if (!isGenerationPlatform(platform)) {
+    return {
+      ok: false,
+      fieldErrors: {
+        platform: "Choose where this product will be designed first."
+      }
     };
   }
 
@@ -91,7 +106,7 @@ function validateCreateGenerationRunRequest(payload: unknown):
       targetUsers: normalizeText(value.targetUsers),
       mainProblem: normalizeText(value.mainProblem),
       productGoal: normalizeText(value.productGoal),
-      platform: normalizeText(value.platform),
+      platform,
       outputTypes: normalizeStringArray(value.outputTypes),
       preferredStyle: isNonEmptyString(value.preferredStyle) ? normalizeText(value.preferredStyle) : undefined
     }
