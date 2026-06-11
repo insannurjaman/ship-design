@@ -85,7 +85,8 @@ export async function regenerateArtifact(
           "You are a senior product design agent working inside Ship Design.",
           "Regenerate only the selected artifact.",
           "Preserve useful decisions unless the feedback asks for a change.",
-          "Keep markdown clean, structured, practical, and beginner-friendly."
+          "Keep markdown clean, structured, practical, and beginner-friendly.",
+          "Do not include internal reasoning, <think> tags, reasoning preambles, or markdown code fences."
         ].join(" ")
       },
       {
@@ -169,6 +170,8 @@ function createRegenerationPrompt(
     "- Do not regenerate any other artifact unless this is the selected artifact.",
     "- Downstream artifacts may be marked needs-review after this succeeds, but do not rewrite them.",
     "- Keep the output markdown clean and structured.",
+    "- Do not include internal reasoning, <think> tags, or preambles.",
+    "- Do not wrap the response in markdown code fences.",
     "",
     "Current active artifact markdown:",
     currentMarkdown,

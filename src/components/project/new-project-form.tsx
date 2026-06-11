@@ -97,8 +97,8 @@ const outputAgentLabels: Record<string, string> = {
   "UX Docs": "UX Research Agent",
   "User Flows": "UX Flow Agent",
   "Screen List": "Screen Inventory Agent",
-  "Design System Plan": "Design System Agent",
-  "Figma Plan": "Figma Builder Agent",
+  "Design System Kit": "Design System Agent",
+  "UI Screens": "Figma Builder Agent",
   "Landing Page Copy": "Landing Page Agent",
   "Handoff Docs": "QA Handoff Agent"
 };

@@ -121,7 +121,7 @@ export const mockAgentRuns: AgentRun[] = [
     id: "design-system-plan",
     name: "Design System Agent",
     status: "queued",
-    output: "Token plan, components, layout rules",
+    output: "Design system kit, tokens, component states",
     description: "Waiting for flow approval before generating component needs.",
     progress: 0
   },
@@ -129,8 +129,8 @@ export const mockAgentRuns: AgentRun[] = [
     id: "figma-plan",
     name: "Figma Builder Agent",
     status: "queued",
-    output: "Pages, frames, components, prototype links",
-    description: "Ready to assemble Figma structure after design system pass.",
+    output: "UI screen specs and Figma-ready previews",
+    description: "Ready to create manual Figma screen specs after design system pass.",
     progress: 0
   },
   {
@@ -202,7 +202,7 @@ export const mockOutputs: OutputArtifact[] = [
   },
   {
     id: "design-system-plan",
-    title: "Design System Plan",
+    title: "Design System Kit",
     type: "Design",
     status: "draft",
     summary: "Token plan, component inventory, state coverage, and responsive behavior.",
@@ -214,14 +214,14 @@ export const mockOutputs: OutputArtifact[] = [
   },
   {
     id: "figma-plan",
-    title: "Figma Plan",
+    title: "UI Screens",
     type: "Figma",
     status: "draft",
-    summary: "Page, frame, component, and handoff organization plan.",
+    summary: "Figma-ready screen specs and frame previews for manual recreation.",
     body: [
-      "Create pages for strategy, research, flows, screens, design system, prototype, and handoff.",
-      "Use slash-based names and variable-backed color decisions.",
-      "Prototype should follow dashboard, intake, agent run, output review, Figma generation, and handoff."
+      "Project Intake: route /projects/new, captures source material and package selection.",
+      "Workflow Progress: route /projects/generated, shows agent timeline and provider metadata.",
+      "Output Review: route /projects/generated/outputs, reviews visual artifacts and package export."
     ]
   },
   {
@@ -327,8 +327,8 @@ export const mockSettings = {
     "UX Docs",
     "User Flows",
     "Screen List",
-    "Design System Plan",
-    "Figma Plan",
+    "Design System Kit",
+    "UI Screens",
     "Landing Page Copy",
     "Handoff Docs"
   ],

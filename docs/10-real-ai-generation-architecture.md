@@ -80,7 +80,7 @@ Example:
 - UX Research Agent reads the Product Strategy output.
 - UX Flow Agent reads Product Strategy and UX Research.
 - Design System Agent reads Screen List and visual direction.
-- Figma Builder Agent reads Screen List and Design System Plan.
+- Figma Builder Agent reads Screen List and Design System Kit.
 
 ## 3. How Outputs Are Stored
 
@@ -138,8 +138,8 @@ If the UX Research artifact is regenerated, these may need review:
 
 - User Flows
 - Screen List
-- Design System Plan
-- Figma Plan
+- Design System Kit
+- UI Screens
 - Landing Page Copy
 - Handoff Docs
 

@@ -19,8 +19,8 @@ Ship Design currently generates:
 | UX Docs | Generated in V1 | Lightweight research assumptions, questions, and risks. |
 | User Flows | Generated in V1 | Primary, secondary, and recovery flows. |
 | Screen List | Generated in V1 | Screen inventory and state coverage. |
-| Design System Plan | Generated in V1 | Tokens, components, states, and responsive behavior. |
-| Figma Plan | Generated in V1 | Figma organization and prototype planning. |
+| Design System Kit | Generated in V1 | Tokens, components, states, and responsive behavior. |
+| UI Screens | Generated in V1 | Figma-ready UI screen specs and manual recreation guidance. |
 | Landing Page Copy | Generated in V1 | Marketing page structure and copy. |
 | Handoff Docs | Generated in V1 | Developer handoff, QA checks, and open decisions. |
 

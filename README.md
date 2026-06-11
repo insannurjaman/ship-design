@@ -2,7 +2,7 @@
 
 Ship Design is an AI-powered product design agent system. It helps designers, founders, and product teams turn one product idea into a complete product design package.
 
-The system guides a user from an early idea to strategy, research, flows, screen planning, design system direction, Figma planning, landing page copy, and developer handoff documentation.
+The system guides a user from an early idea to strategy, research, visual flows, screen planning, a design system kit, UI screen specs, landing page copy, and developer handoff documentation.
 
 ## What Ship Design Creates
 
@@ -10,8 +10,8 @@ The system guides a user from an early idea to strategy, research, flows, screen
 2. UX Docs
 3. User flows
 4. Screen List
-5. Design System Plan
-6. Figma Plan
+5. Design System Kit
+6. UI Screens
 7. Landing Page Copy
 8. Handoff Docs
 
@@ -50,7 +50,7 @@ Oxide can be used as inspiration for atmosphere and technical restraint, but the
 - [Agent System Overview](./docs/02-agent-system-overview.md)
 - [User Flows](./docs/03-user-flows.md)
 - [Screen List](./docs/04-screen-list.md)
-- [Design System Plan](./docs/05-design-system-plan.md)
+- [Design System Kit](./docs/05-design-system-plan.md)
 - [Figma Structure](./docs/06-figma-structure.md)
 - [Quality Checklist](./docs/07-quality-checklist.md)
 - [Landing Page Strategy](./docs/08-landing-page-strategy.md)
@@ -68,6 +68,7 @@ Ship Design currently has:
 - Provider fallback for free-first AI providers
 - Context budgeting for downstream artifact generation
 - Artifact regeneration and version history
+- Visual artifact review for user flows, UI screens, and design system kits
 - Copy output, markdown export, and local mock Figma package preparation
 - A token-based dark technical UI direction
 

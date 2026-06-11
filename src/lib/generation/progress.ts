@@ -96,11 +96,11 @@ export const generationStepTemplates: Array<Pick<GenerationStep, "id" | "title">
   },
   {
     id: "design-system-plan",
-    title: "Design System"
+    title: "Design System Kit"
   },
   {
     id: "figma-plan",
-    title: "Figma Builder"
+    title: "UI Screens"
   },
   {
     id: "landing-page-copy",

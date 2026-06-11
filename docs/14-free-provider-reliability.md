@@ -21,8 +21,8 @@ Ship Design now passes summaries instead of full previous artifacts.
 - UX Docs uses Product Brief summary.
 - User Flows uses Product Brief and UX Docs summaries.
 - Screen List uses Product Brief, UX Docs, and User Flows summaries.
-- Design System Plan uses Product Brief, Screen List, and preferred style.
-- Figma Plan uses Screen List and Design System Plan.
+- Design System Kit uses Product Brief, Screen List, and preferred style.
+- UI Screens uses Screen List and Design System Kit.
 - Landing Page Copy uses Product Brief and UX Docs.
 - Handoff Docs uses summaries of all generated artifacts.
 
@@ -55,8 +55,8 @@ Full package generates all 8 artifacts:
 - UX Docs
 - User Flows
 - Screen List
-- Design System Plan
-- Figma Plan
+- Design System Kit
+- UI Screens
 - Landing Page Copy
 - Handoff Docs
 

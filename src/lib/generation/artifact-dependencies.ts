@@ -85,10 +85,10 @@ function getExtraDependencyRules(artifactId: GenerationArtifactId, input: Create
 
   if (artifactId === "figma-plan") {
     return [
-      "Ship Design Figma structure rules:",
-      "- Use pages for strategy, research, flows, wireframes, design system, components, desktop prototype, mobile prototype, landing page, edge cases, and dev handoff.",
-      "- Use clear layer names and slash-based component names.",
-      "- Use variables/tokens as source of truth.",
+      "UI Screens rules:",
+      "- Create concrete screen specs that a designer can manually recreate in Figma.",
+      "- Use clear screen names, route or screen ids, layout sections, components, content, states, interaction notes, and design notes.",
+      "- Use the Design System Kit tokens and component guidance as source material.",
       "- Do not claim the real Figma API is connected yet."
     ].join("\n");
   }

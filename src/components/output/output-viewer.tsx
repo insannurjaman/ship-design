@@ -1,10 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { ArtifactContentRenderer } from "@/components/output/artifact-content-renderer";
 import { ArtifactVersionPanel, type ViewerArtifactVersion } from "@/components/output/artifact-version-panel";
 import { FigmaStatusPanel } from "@/components/output/figma-status-panel";
 import { RegenerateArtifactDialog } from "@/components/output/regenerate-artifact-dialog";
+import {
+  createStructuredExportBlock,
+  VisualArtifactRenderer
+} from "@/components/output/visual-artifact-renderers";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
@@ -90,8 +93,9 @@ export function OutputViewer({
       "",
       output.summary,
       "",
-      output.markdown ?? output.body.map((paragraph) => `- ${paragraph}`).join("\n")
-    ].join("\n"))
+      output.markdown ?? output.body.map((paragraph) => `- ${paragraph}`).join("\n"),
+      createStructuredExportBlock(output)
+    ].filter(Boolean).join("\n"))
     .join("\n\n---\n\n"),
     skippedViewerOutputs.length > 0
       ? [
@@ -217,7 +221,7 @@ export function OutputViewer({
           </div>
         </div>
         <div className="border border-line bg-surface-base p-5 sm:p-6">
-          <ArtifactContentRenderer markdown={output.markdown ?? createMarkdownFromOutput(output)} />
+          <VisualArtifactRenderer artifact={output} />
         </div>
         {canRegenerate && output.status !== "skipped" ? (
           <RegenerateArtifactDialog
@@ -422,10 +426,6 @@ function MetadataItem({
       </p>
     </div>
   );
-}
-
-function createMarkdownFromOutput(output: ViewerOutputArtifact) {
-  return [`# ${output.title}`, "", output.summary, "", ...output.body.map((paragraph) => `- ${paragraph}`)].join("\n");
 }
 
 function formatGeneratedAt(value?: string) {

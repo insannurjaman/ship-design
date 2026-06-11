@@ -18,8 +18,8 @@ const outputTypes: Record<string, string> = {
   "UX Docs": "Research",
   "User Flows": "UX",
   "Screen List": "Inventory",
-  "Design System Plan": "Design",
-  "Figma Plan": "Figma",
+  "Design System Kit": "Design",
+  "UI Screens": "Screens",
   "Landing Page Copy": "Marketing",
   "Handoff Docs": "Engineering"
 };

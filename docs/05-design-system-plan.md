@@ -1,4 +1,4 @@
-# 05 Design System Plan
+# 05 Design System Kit
 
 ## Purpose
 
@@ -120,4 +120,3 @@ When implemented in Figma, create:
 - Core components
 - Component variants for states
 - Example screens using the system
-

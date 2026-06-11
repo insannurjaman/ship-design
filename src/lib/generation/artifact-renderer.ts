@@ -27,7 +27,8 @@ export const generationArtifactSpecs: GenerationArtifactSpec[] = [
     instructions: [
       "Summarize the audience, problem, promise, MVP scope, constraints, and success signals.",
       "Keep the brief practical enough for a founder, designer, and engineer to review together.",
-      "Use concise markdown sections."
+      "Use concise markdown sections.",
+      "Avoid generic claims; tie every recommendation to the product intake."
     ]
   },
   {
@@ -39,7 +40,8 @@ export const generationArtifactSpecs: GenerationArtifactSpec[] = [
     instructions: [
       "Include target users, jobs to be done, assumptions, research questions, and product risks.",
       "Keep the output beginner-friendly without being vague.",
-      "Use concise markdown sections."
+      "Use concise markdown sections.",
+      "Prioritize research questions that can change product or design decisions."
     ]
   },
   {
@@ -49,9 +51,11 @@ export const generationArtifactSpecs: GenerationArtifactSpec[] = [
     purpose: "Map the first core user flows for the product experience.",
     agentName: "UX Flow Agent",
     instructions: [
-      "Include the primary flow, secondary flow, and one recovery or error flow.",
-      "Write flows as ordered steps that can become screen planning input.",
-      "Use concise markdown sections."
+      "Include exactly three sections: Primary Flow, Secondary Flow, and Recovery Flow.",
+      "For each flow, include a Nodes list and an Edges list.",
+      "Format nodes as '- node-id | Label | Purpose'.",
+      "Format edges as '- source-id -> target-id | Condition or action'.",
+      "Keep labels short enough to render in a visual diagram."
     ]
   },
   {
@@ -61,32 +65,37 @@ export const generationArtifactSpecs: GenerationArtifactSpec[] = [
     purpose: "Turn strategy, research, and flows into a practical screen inventory.",
     agentName: "Screen Inventory Agent",
     instructions: [
-      "Include required screens, purpose, primary content, important states, and navigation notes.",
+      "Include required screens, purpose, primary content, key components, states, navigation notes, and dependency artifacts.",
+      "Use one '## Screen: Screen Name' section per screen.",
       "Use Product Brief, UX Docs, and User Flows as dependencies.",
       "Keep the list implementation-ready for product designers and engineers."
     ]
   },
   {
     id: "design-system-plan",
-    title: "Design System Plan",
+    title: "Design System Kit",
     type: "Design",
-    purpose: "Create a design system plan for the generated product screens.",
+    purpose: "Create a practical design system starter kit for the generated product screens.",
     agentName: "Design System Agent",
     instructions: [
-      "Include tokens, typography, components, interaction states, and responsive behavior.",
+      "Include primitive color palette, semantic tokens, light/dark mapping, typography scale, spacing scale, radius scale, shadow/elevation scale, component list, component state matrix, and Figma variable naming map.",
+      "Use clear token names that can become CSS variables, Tailwind config, and Figma variables.",
       "Use Product Brief, Screen List, and preferred design style as dependencies.",
       "Keep the plan aligned to the Ship Design dark technical visual direction."
     ]
   },
   {
     id: "figma-plan",
-    title: "Figma Plan",
+    title: "UI Screens",
     type: "Figma",
-    purpose: "Plan the Figma structure needed for pages, frames, components, prototype, and handoff.",
+    purpose: "Create Figma-ready UI screen specs that can be manually recreated in Figma.",
     agentName: "Figma Builder Agent",
     instructions: [
-      "Include Figma pages, frame groups, component organization, naming, and prototype notes.",
-      "Use Screen List and Design System Plan as dependencies.",
+      "Create structured UI screen specs, not a generic Figma organization plan.",
+      "Use one '## Screen: Screen Name' section per screen.",
+      "For each screen include: route or screen id, device target, purpose, layout sections, components, main copy, states, interaction notes, and design notes.",
+      "Make screens concrete enough to recreate manually in Figma.",
+      "Use Screen List and Design System Kit as dependencies.",
       "Follow Ship Design Figma organization rules and keep real Figma API work out of scope."
     ]
   },
@@ -97,7 +106,8 @@ export const generationArtifactSpecs: GenerationArtifactSpec[] = [
     purpose: "Create landing page messaging for the generated product concept.",
     agentName: "Landing Page Agent",
     instructions: [
-      "Include hero copy, subcopy, proof points, workflow sections, CTA text, and FAQ ideas.",
+      "Include sections for Hero, Pain Points, Solution, Features, How It Works, Social Proof Placeholder, FAQ, and Final CTA.",
+      "Write copy that can be pasted directly into a landing page wireframe.",
       "Use Product Brief, UX Docs, target users, and product goal as dependencies.",
       "Avoid generic startup claims and keep copy specific to the product."
     ]
@@ -109,7 +119,7 @@ export const generationArtifactSpecs: GenerationArtifactSpec[] = [
     purpose: "Create developer handoff documentation for the full generated package.",
     agentName: "QA Handoff Agent",
     instructions: [
-      "Include implementation notes, routes/screens, component needs, states, QA checks, and open decisions.",
+      "Summarize product decisions, screens, flows, design system, UI screens, states, QA checklist, implementation notes, and open questions.",
       "Use all generated artifacts as dependencies.",
       "Keep the handoff useful for Codex, engineers, and designers reviewing the package."
     ]
@@ -140,6 +150,9 @@ export function createArtifactPrompt(
     ...spec.instructions.map((instruction) => `- ${instruction}`),
     ...getPlatformInstructions(input.platform, spec).map((instruction) => `- ${instruction}`),
     "- Do not mention that you are an AI model.",
+    "- Do not include internal reasoning, chain-of-thought, <think> tags, or preambles like 'Okay, I need to'.",
+    "- Do not wrap the response in markdown code fences.",
+    "- Avoid empty duplicate sections and generic filler.",
     "- Do not invent backend integrations, auth, payment, or database requirements.",
     "- Return only the artifact markdown.",
     dependencyContext ? ["", "Dependency context:", dependencyContext].join("\n") : ""

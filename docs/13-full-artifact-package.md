@@ -16,8 +16,8 @@ Ship Design now generates these artifacts in order:
 | 2 | UX Docs | UX Research Agent |
 | 3 | User Flows | UX Flow Agent |
 | 4 | Screen List | Screen Inventory Agent |
-| 5 | Design System Plan | Design System Agent |
-| 6 | Figma Plan | Figma Builder Agent |
+| 5 | Design System Kit | Design System Agent |
+| 6 | UI Screens | Figma Builder Agent |
 | 7 | Landing Page Copy | Landing Page Agent |
 | 8 | Handoff Docs | QA Handoff Agent |
 
@@ -28,8 +28,8 @@ Generation is sequential so later artifacts can use earlier artifacts as context
 | Artifact | Uses |
 | --- | --- |
 | Screen List | Product Brief, UX Docs, User Flows |
-| Design System Plan | Product Brief, Screen List, preferred design style |
-| Figma Plan | Screen List, Design System Plan, Figma structure rules |
+| Design System Kit | Product Brief, Screen List, preferred design style |
+| UI Screens | Screen List, Design System Kit, UI screen structure rules |
 | Landing Page Copy | Product Brief, UX Docs, target users, product goal |
 | Handoff Docs | All generated artifacts and developer implementation notes |
 
@@ -55,12 +55,12 @@ When an upstream artifact changes, related downstream artifacts are marked `need
 
 | Regenerated artifact | Marked needs-review |
 | --- | --- |
-| Product Brief | UX Docs, User Flows, Screen List, Design System Plan, Figma Plan, Landing Page Copy, Handoff Docs |
+| Product Brief | UX Docs, User Flows, Screen List, Design System Kit, UI Screens, Landing Page Copy, Handoff Docs |
 | UX Docs | User Flows, Screen List, Landing Page Copy, Handoff Docs |
-| User Flows | Screen List, Design System Plan, Figma Plan, Handoff Docs |
-| Screen List | Design System Plan, Figma Plan, Handoff Docs |
-| Design System Plan | Figma Plan, Handoff Docs |
-| Figma Plan | Handoff Docs |
+| User Flows | Screen List, Design System Kit, UI Screens, Handoff Docs |
+| Screen List | Design System Kit, UI Screens, Handoff Docs |
+| Design System Kit | UI Screens, Handoff Docs |
+| UI Screens | Handoff Docs |
 | Landing Page Copy | Handoff Docs |
 | Handoff Docs | None |
 
@@ -74,8 +74,8 @@ Export order:
 2. UX Docs
 3. User Flows
 4. Screen List
-5. Design System Plan
-6. Figma Plan
+5. Design System Kit
+6. UI Screens
 7. Landing Page Copy
 8. Handoff Docs
 

@@ -5,8 +5,8 @@ export const supportedV1Outputs = [
   "UX Docs",
   "User Flows",
   "Screen List",
-  "Design System Plan",
-  "Figma Plan",
+  "Design System Kit",
+  "UI Screens",
   "Landing Page Copy",
   "Handoff Docs"
 ] as const;
@@ -25,10 +25,15 @@ export const artifactIdByOutputLabel: Record<(typeof supportedV1Outputs)[number]
   "UX Docs": "ux-docs",
   "User Flows": "user-flows",
   "Screen List": "screen-list",
-  "Design System Plan": "design-system-plan",
-  "Figma Plan": "figma-plan",
+  "Design System Kit": "design-system-plan",
+  "UI Screens": "figma-plan",
   "Landing Page Copy": "landing-page-copy",
   "Handoff Docs": "handoff-docs"
+};
+
+const legacyArtifactIdByOutputLabel: Record<string, GenerationArtifactId> = {
+  "Design System Plan": "design-system-plan",
+  "Figma Plan": "figma-plan"
 };
 
 export const outputLabelByArtifactId = Object.fromEntries(
@@ -44,6 +49,12 @@ export function normalizeSelectedOutputIds(outputTypes?: string[]) {
     if (requiredLabels.has(label) || selectedLabels.has(label)) {
       selectedIds.add(artifactIdByOutputLabel[label]);
     }
+  }
+
+  for (const label of selectedLabels) {
+    const legacyId = legacyArtifactIdByOutputLabel[label];
+
+    if (legacyId) selectedIds.add(legacyId);
   }
 
   return selectedIds;
