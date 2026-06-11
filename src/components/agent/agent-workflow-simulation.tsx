@@ -10,6 +10,7 @@ import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Progress } from "@/components/ui/progress";
 import { StatusPill } from "@/components/ui/status-pill";
+import type { AiProviderId } from "@/lib/ai/types";
 import type { ActivityLog as ActivityLogItem, AgentRun, OutputArtifact, Project } from "@/lib/mock-data";
 
 type AgentWorkflowSimulationProps = {
@@ -24,6 +25,10 @@ type AgentWorkflowSimulationProps = {
     model: string;
     mode: "mock" | "real";
     warnings?: string[];
+    attemptedProviders?: AiProviderId[];
+    fallbackUsed?: boolean;
+    finalProvider?: AiProviderId;
+    providerWarnings?: string[];
   };
 };
 
@@ -74,7 +79,7 @@ export function AgentWorkflowSimulation({
   const visibleLogs = Math.max(1, Math.ceil((progress / 100) * logs.length));
   const hasRecoveredWarning = progress >= 44 && progress < 62;
   const viewerHref = outputViewerHref ?? `/projects/${project.id}/outputs?generated=1`;
-  const runWarnings = runInfo?.warnings ?? [];
+  const runWarnings = runInfo?.fallbackUsed ? runInfo.providerWarnings ?? runInfo.warnings ?? [] : [];
 
   const message = useMemo(() => {
     if (isComplete) {
@@ -209,7 +214,7 @@ export function AgentWorkflowSimulation({
           description={
             isComplete
               ? runInfo
-                ? `Run stored in memory. Provider: ${runInfo.provider}. Mode: ${runInfo.mode}. Model: ${runInfo.model}.`
+                ? `Run stored in memory. Provider: ${runInfo.provider}. Mode: ${runInfo.mode}. Model: ${runInfo.model}. Fallback: ${runInfo.fallbackUsed ? "yes" : "no"}.`
                 : "The generated package is ready for review. No backend, API, or database was used."
               : "This demo uses local mock timing so the team can review the product flow before real AI integration."
           }

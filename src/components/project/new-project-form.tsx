@@ -10,17 +10,7 @@ import { CheckboxRow } from "@/components/project/checkbox-row";
 import { SegmentedControl } from "@/components/project/segmented-control";
 import { StatusPill } from "@/components/ui/status-pill";
 import { Textarea } from "@/components/ui/textarea";
-
-const outputOptions = [
-  "Product Brief",
-  "UX Docs",
-  "User Flows",
-  "Screen List",
-  "Design System Plan",
-  "Figma Plan",
-  "Landing Page Copy",
-  "Handoff Docs"
-];
+import { futureOutputs, outputScopeHelperText, supportedV1Outputs } from "@/lib/output-scope";
 
 type GenerationRunResponse = {
   id: string;
@@ -28,6 +18,8 @@ type GenerationRunResponse = {
   mode: "mock" | "real";
   provider: string;
   warnings: string[];
+  fallbackUsed?: boolean;
+  providerWarnings?: string[];
 };
 
 type GenerationRunErrorResponse = {
@@ -39,7 +31,7 @@ export function NewProjectForm() {
   const router = useRouter();
   const [isGenerating, setIsGenerating] = useState(false);
   const [platform, setPlatform] = useState("Both");
-  const [selectedOutputs, setSelectedOutputs] = useState(outputOptions);
+  const [selectedOutputs, setSelectedOutputs] = useState<string[]>([...supportedV1Outputs]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [warningMessage, setWarningMessage] = useState<string | null>(null);
 
@@ -86,7 +78,7 @@ export function NewProjectForm() {
         return;
       }
 
-      const warning = payload.warnings?.[0];
+      const warning = payload.providerWarnings?.[0] ?? payload.warnings?.[0];
 
       if (warning) {
         setWarningMessage(warning);
@@ -169,15 +161,27 @@ export function NewProjectForm() {
           />
 
           <div className="grid gap-3">
-            <p className="font-mono text-xs font-medium uppercase text-ink-muted">Output types</p>
+            <div>
+              <p className="font-mono text-xs font-medium uppercase text-ink-muted">Output types</p>
+              <p className="mt-2 text-sm leading-6 text-ink-secondary">{outputScopeHelperText}</p>
+            </div>
             <div className="grid gap-2 md:grid-cols-2">
-              {outputOptions.map((output) => (
+              {supportedV1Outputs.map((output) => (
                 <CheckboxRow
                   key={output}
                   label={output}
                   checked={selectedOutputs.includes(output)}
                   onChange={(checked) => toggleOutput(output, checked)}
                   disabled={isGenerating}
+                />
+              ))}
+              {futureOutputs.map((output) => (
+                <CheckboxRow
+                  key={output}
+                  label={output}
+                  checked={false}
+                  disabled
+                  meta={<Badge tone="muted">Coming soon</Badge>}
                 />
               ))}
             </div>
@@ -194,14 +198,14 @@ export function NewProjectForm() {
             <div className="border border-accent-green/60 bg-accent-soft p-4" aria-live="polite">
               <Badge tone="accent">Preparing run</Badge>
               <p className="mt-3 text-sm leading-6 text-ink-secondary">
-                Creating a generation run for {platform.toLowerCase()} and staging {selectedOutputs.length} outputs.
+                Creating a generation run for {platform.toLowerCase()} and generating 3 supported outputs.
               </p>
             </div>
           ) : null}
 
           {warningMessage ? (
             <div className="border border-status-warning/70 bg-status-warning/10 p-4" aria-live="polite">
-              <Badge tone="warning">Mock fallback</Badge>
+              <Badge tone="warning">Provider fallback</Badge>
               <p className="mt-3 text-sm leading-6 text-ink-secondary">{warningMessage}</p>
             </div>
           ) : null}

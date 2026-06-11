@@ -31,7 +31,11 @@ export function createMockProvider(config: AiProviderConfig): AiProvider {
           outputTokens: 80,
           totalTokens: Math.ceil(prompt.length / 4) + 80
         },
-        warnings: []
+        warnings: [],
+        attemptedProviders: ["mock"],
+        fallbackUsed: false,
+        finalProvider: "mock",
+        providerWarnings: []
       };
     }
   };

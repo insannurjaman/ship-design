@@ -9,6 +9,7 @@ import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { StatusPill } from "@/components/ui/status-pill";
 import { Tabs, type TabItem } from "@/components/ui/tabs";
+import type { AiProviderId } from "@/lib/ai/types";
 import type { OutputArtifact } from "@/lib/mock-data";
 
 type FigmaActionState = "connected" | "syncing" | "sent" | "error";
@@ -19,6 +20,10 @@ type ViewerOutputArtifact = OutputArtifact & {
   model?: string;
   mode?: "mock" | "real";
   warnings?: string[];
+  attemptedProviders?: AiProviderId[];
+  fallbackUsed?: boolean;
+  finalProvider?: AiProviderId;
+  providerWarnings?: string[];
 };
 
 type OutputViewerProps = {
@@ -35,6 +40,10 @@ type OutputViewerProps = {
     mode: "mock" | "real";
     createdAt?: string;
     warnings?: string[];
+    attemptedProviders?: AiProviderId[];
+    fallbackUsed?: boolean;
+    finalProvider?: AiProviderId;
+    providerWarnings?: string[];
   };
   regenerateHref?: string;
 };
@@ -59,7 +68,9 @@ export function OutputViewer({
       output.markdown ?? output.body.map((paragraph) => `- ${paragraph}`).join("\n")
     ].join("\n"))
     .join("\n\n---\n\n");
-  const fallbackUsed = Boolean(runInfo?.warnings?.length);
+  const fallbackUsed = Boolean(runInfo?.fallbackUsed);
+  const providerWarnings = runInfo?.providerWarnings ?? [];
+  const warningText = createProviderWarningText(runInfo);
 
   async function copyOutput() {
     try {
@@ -155,12 +166,19 @@ export function OutputViewer({
               </div>
             </div>
             {runInfo ? (
-              <div className="mt-5 grid gap-2 border border-line bg-surface-base p-3 sm:grid-cols-2 xl:grid-cols-5">
+              <div className="mt-5 grid gap-2 border border-line bg-surface-base p-3 sm:grid-cols-2 xl:grid-cols-6">
                 <MetadataItem label="Provider" value={runInfo.provider} />
                 <MetadataItem label="Mode" value={runInfo.mode} />
                 <MetadataItem label="Model" value={runInfo.model} />
                 <MetadataItem label="Generated" value={formatGeneratedAt(runInfo.createdAt)} />
                 <MetadataItem label="Fallback" value={fallbackUsed ? "yes" : "no"} tone={fallbackUsed ? "warning" : "default"} />
+                {fallbackUsed ? (
+                  <MetadataItem
+                    label="Attempted"
+                    value={(runInfo.attemptedProviders ?? []).join(" -> ") || "none"}
+                    tone="warning"
+                  />
+                ) : null}
               </div>
             ) : (
               <div className="mt-5 border border-line bg-surface-base p-3">
@@ -218,14 +236,21 @@ export function OutputViewer({
           </CardBody>
         </Card>
 
-        {runInfo?.warnings?.map((warning) => (
-          <Card key={warning} className="border-status-warning/60">
+        {fallbackUsed && warningText ? (
+          <Card className="border-status-warning/60">
             <CardBody>
               <Badge tone="warning">Provider warning</Badge>
-              <p className="mt-3 text-sm leading-6 text-ink-secondary">{warning}</p>
+              <p className="mt-3 text-sm leading-6 text-ink-secondary">{warningText}</p>
+              {providerWarnings.length > 0 ? (
+                <ul className="mt-3 grid gap-2 text-sm leading-6 text-ink-muted">
+                  {providerWarnings.map((warning) => (
+                    <li key={warning}>- {warning}</li>
+                  ))}
+                </ul>
+              ) : null}
             </CardBody>
           </Card>
-        ))}
+        ) : null}
 
         <EmptyState
           title="No reviewer comments"
@@ -276,4 +301,14 @@ function formatGeneratedAt(value?: string) {
     hour: "2-digit",
     minute: "2-digit"
   });
+}
+
+function createProviderWarningText(runInfo?: OutputViewerProps["runInfo"]) {
+  if (!runInfo?.fallbackUsed) return "";
+
+  if (runInfo.finalProvider === "mock") {
+    return "All configured real providers failed or were unavailable. Ship Design used mock generation as the final fallback.";
+  }
+
+  return `Ship Design used ${runInfo.finalProvider ?? runInfo.provider} after the selected real provider could not complete the request.`;
 }

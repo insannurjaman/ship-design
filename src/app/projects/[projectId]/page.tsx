@@ -66,7 +66,11 @@ export default async function ProjectPage({ params, searchParams }: ProjectPageP
             provider: generationRun.provider,
             model: generationRun.model,
             mode: generationRun.mode,
-            warnings: generationRun.warnings
+            warnings: generationRun.warnings,
+            attemptedProviders: generationRun.attemptedProviders,
+            fallbackUsed: generationRun.fallbackUsed,
+            finalProvider: generationRun.finalProvider,
+            providerWarnings: generationRun.providerWarnings
           }}
         />
       </AppShell>

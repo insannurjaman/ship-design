@@ -64,7 +64,11 @@ export function createHuggingFaceProvider(config: AiProviderConfig): AiProvider 
         text,
         raw: json,
         usage: normalizeOpenAiUsage(json.usage),
-        warnings: []
+        warnings: [],
+        attemptedProviders: ["huggingface"],
+        fallbackUsed: false,
+        finalProvider: "huggingface",
+        providerWarnings: []
       };
     }
   };

@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { mockOutputs } from "@/lib/mock-data";
+import { futureOutputs, outputScopeHelperText, supportedV1Outputs } from "@/lib/output-scope";
 
 export default function NewProjectPage() {
   return (
@@ -19,21 +20,38 @@ export default function NewProjectPage() {
           <Card>
             <CardHeader>
               <h2 className="font-mono text-sm uppercase text-ink-secondary">Package preview</h2>
+              <p className="mt-2 text-sm leading-6 text-ink-secondary">{outputScopeHelperText}</p>
             </CardHeader>
-            <CardBody className="grid gap-3">
-              {mockOutputs.map((output) => (
-                <div key={output.id} className="border border-line bg-surface-base p-3">
-                  <div className="flex items-center justify-between gap-3">
-                    <span className="font-mono text-xs uppercase text-accent-green">
-                      {output.type}
-                    </span>
-                    <Badge tone={output.status === "ready" ? "success" : "muted"}>
-                      {output.status}
-                    </Badge>
+            <CardBody className="grid gap-5">
+              <div className="grid gap-3">
+                <p className="font-mono text-xs uppercase text-accent-green">Generated in V1</p>
+                {mockOutputs
+                  .filter((output) => supportedV1Outputs.includes(output.title as (typeof supportedV1Outputs)[number]))
+                  .map((output) => (
+                    <div key={output.id} className="border border-line bg-surface-base p-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="font-mono text-xs uppercase text-accent-green">
+                          {output.type}
+                        </span>
+                        <Badge tone="success">Generated</Badge>
+                      </div>
+                      <p className="mt-2 text-sm text-ink-secondary">{output.title}</p>
+                    </div>
+                  ))}
+              </div>
+
+              <div className="grid gap-3">
+                <p className="font-mono text-xs uppercase text-ink-muted">Coming soon</p>
+                {futureOutputs.map((output) => (
+                  <div key={output} className="border border-line bg-surface-base p-3 opacity-75">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="font-mono text-xs uppercase text-ink-muted">Staged</span>
+                      <Badge tone="muted">Coming soon</Badge>
+                    </div>
+                    <p className="mt-2 text-sm text-ink-muted">{output}</p>
                   </div>
-                  <p className="mt-2 text-sm text-ink-secondary">{output.title}</p>
-                </div>
-              ))}
+                ))}
+              </div>
             </CardBody>
           </Card>
 

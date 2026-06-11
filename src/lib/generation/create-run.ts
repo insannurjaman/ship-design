@@ -50,6 +50,10 @@ export async function createGenerationRun(input: CreateGenerationRunRequest): Pr
 
   const firstArtifact = artifacts[0];
   const warnings = Array.from(new Set(artifacts.flatMap((artifact) => artifact.warnings)));
+  const providerWarnings = Array.from(new Set(artifacts.flatMap((artifact) => artifact.providerWarnings)));
+  const attemptedProviders = Array.from(new Set(artifacts.flatMap((artifact) => artifact.attemptedProviders)));
+  const fallbackUsed = artifacts.some((artifact) => artifact.fallbackUsed);
+  const finalProvider = artifacts.find((artifact) => artifact.finalProvider !== "mock")?.finalProvider ?? firstArtifact?.finalProvider ?? "mock";
   const run: GenerationRun = {
     id: runId,
     status: "complete",
@@ -61,7 +65,11 @@ export async function createGenerationRun(input: CreateGenerationRunRequest): Pr
     provider: firstArtifact?.provider ?? "mock",
     model: firstArtifact?.model ?? "mock-ship-design",
     mode: firstArtifact?.mode ?? "mock",
-    warnings
+    warnings,
+    attemptedProviders,
+    fallbackUsed,
+    finalProvider,
+    providerWarnings
   };
 
   return saveGenerationRun(run);

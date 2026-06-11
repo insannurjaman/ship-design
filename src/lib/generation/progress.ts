@@ -26,6 +26,10 @@ export type GenerationArtifact = {
   mode: AiGenerationMode;
   usage?: AiTokenUsage;
   warnings: string[];
+  attemptedProviders: AiProviderId[];
+  fallbackUsed: boolean;
+  finalProvider: AiProviderId;
+  providerWarnings: string[];
 };
 
 export type GenerationStepStatus = "queued" | "running" | "complete" | "error";
@@ -49,6 +53,10 @@ export type GenerationRun = {
   model: string;
   mode: AiGenerationMode;
   warnings: string[];
+  attemptedProviders: AiProviderId[];
+  fallbackUsed: boolean;
+  finalProvider: AiProviderId;
+  providerWarnings: string[];
 };
 
 export const generationStepTemplates: Array<Pick<GenerationStep, "id" | "title">> = [

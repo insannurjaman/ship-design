@@ -64,7 +64,11 @@ export function createGroqProvider(config: AiProviderConfig): AiProvider {
         text,
         raw: json,
         usage: normalizeOpenAiUsage(json.usage),
-        warnings: []
+        warnings: [],
+        attemptedProviders: ["groq"],
+        fallbackUsed: false,
+        finalProvider: "groq",
+        providerWarnings: []
       };
     }
   };

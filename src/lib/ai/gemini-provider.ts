@@ -89,7 +89,11 @@ export function createGeminiProvider(config: AiProviderConfig): AiProvider {
           outputTokens: json.usageMetadata?.candidatesTokenCount,
           totalTokens: json.usageMetadata?.totalTokenCount
         },
-        warnings: []
+        warnings: [],
+        attemptedProviders: ["gemini"],
+        fallbackUsed: false,
+        finalProvider: "gemini",
+        providerWarnings: []
       };
     }
   };

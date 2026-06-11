@@ -66,7 +66,11 @@ export function createOpenRouterProvider(config: AiProviderConfig): AiProvider {
         text,
         raw: json,
         usage: normalizeOpenAiUsage(json.usage),
-        warnings: []
+        warnings: [],
+        attemptedProviders: ["openrouter"],
+        fallbackUsed: false,
+        finalProvider: "openrouter",
+        providerWarnings: []
       };
     }
   };

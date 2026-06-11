@@ -38,6 +38,10 @@ export type AiGenerateResponse = {
   raw?: unknown;
   usage?: AiTokenUsage;
   warnings: string[];
+  attemptedProviders: AiProviderId[];
+  fallbackUsed: boolean;
+  finalProvider: AiProviderId;
+  providerWarnings: string[];
 };
 
 export type AiProvider = {

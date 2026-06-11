@@ -88,7 +88,11 @@ export function renderGenerationArtifact(
     model: response.model,
     mode: response.mode,
     usage: response.usage,
-    warnings: response.warnings
+    warnings: response.warnings,
+    attemptedProviders: response.attemptedProviders,
+    fallbackUsed: response.fallbackUsed,
+    finalProvider: response.finalProvider,
+    providerWarnings: response.providerWarnings
   };
 }
 

@@ -1,6 +1,6 @@
 import "server-only";
 
-import { getAiGatewayConfig } from "./config";
+import { getAiGatewayConfig, getRealProviderFallbackOrder } from "./config";
 import { createGeminiProvider } from "./gemini-provider";
 import { createGroqProvider } from "./groq-provider";
 import { createHuggingFaceProvider } from "./huggingface-provider";
@@ -27,36 +27,101 @@ export function getSelectedAiProvider() {
 
   return {
     mode: config.mode,
-    provider,
-    fallbackWarning: config.fallbackWarning
+    provider
   };
 }
 
 export async function generateAiText(request: AiGenerateRequest): Promise<AiGenerateResponse> {
-  const { mode, provider, fallbackWarning } = getSelectedAiProvider();
+  const config = getAiGatewayConfig();
+  const providers = createProviders();
 
-  try {
-    const response = await provider.generate(request);
-
-    return {
-      ...response,
-      warnings: fallbackWarning ? [...response.warnings, fallbackWarning] : response.warnings
-    };
-  } catch (error) {
-    if (mode !== "real" || provider.id === "mock") {
-      throw error;
-    }
-
-    const providers = createProviders();
+  if (config.mode !== "real") {
     const fallback = await providers.mock.generate(request);
-    const message = error instanceof Error ? error.message : "Unknown provider error.";
+    return {
+      ...fallback,
+      attemptedProviders: ["mock"],
+      fallbackUsed: false,
+      finalProvider: "mock",
+      providerWarnings: []
+    };
+  }
+
+  const selectedProvider = config.selectedProvider;
+  const realProviderOrder = getRealProviderFallbackOrder(selectedProvider);
+  const configuredRealProviders = realProviderOrder.filter((providerId) => providers[providerId].isConfigured());
+  const attemptedProviders: AiProviderId[] = [];
+  const providerWarnings: string[] = [];
+
+  if (!providers[selectedProvider].isConfigured()) {
+    providerWarnings.push(
+      `Real AI mode is enabled for ${providers[selectedProvider].displayName}, but its API key is missing.`
+    );
+  }
+
+  if (configuredRealProviders.length === 0) {
+    const fallback = await providers.mock.generate(request);
+    const finalWarnings = [
+      ...providerWarnings,
+      "No configured real AI providers were available. Ship Design used mock generation as the final fallback."
+    ];
 
     return {
       ...fallback,
-      warnings: [
-        ...fallback.warnings,
-        `${provider.displayName} failed during real AI generation. Ship Design fell back to mock generation. ${message}`
-      ]
+      warnings: [...fallback.warnings, ...finalWarnings],
+      attemptedProviders: ["mock"],
+      fallbackUsed: true,
+      finalProvider: "mock",
+      providerWarnings: finalWarnings
     };
   }
+
+  for (const providerId of configuredRealProviders) {
+    const provider = providers[providerId];
+    attemptedProviders.push(providerId);
+
+    try {
+      const response = await provider.generate(request);
+      const fallbackUsed = providerId !== selectedProvider || providerWarnings.length > 0;
+      const finalProviderWarnings = fallbackUsed
+        ? [
+            ...providerWarnings,
+            `${provider.displayName} was used after fallback from ${providers[selectedProvider].displayName}.`
+          ]
+        : providerWarnings;
+
+      return {
+        ...response,
+        warnings: [...response.warnings, ...finalProviderWarnings],
+        attemptedProviders,
+        fallbackUsed,
+        finalProvider: providerId,
+        providerWarnings: finalProviderWarnings
+      };
+    } catch (error) {
+      providerWarnings.push(`${provider.displayName} failed: ${formatProviderError(error)}`);
+    }
+  }
+
+  const fallback = await providers.mock.generate(request);
+  const finalWarnings = [
+    ...providerWarnings,
+    "All configured real AI providers failed or were unavailable. Ship Design used mock generation as the final fallback."
+  ];
+
+  return {
+    ...fallback,
+    warnings: [...fallback.warnings, ...finalWarnings],
+    attemptedProviders: [...attemptedProviders, "mock"],
+    fallbackUsed: true,
+    finalProvider: "mock",
+    providerWarnings: finalWarnings
+  };
+}
+
+function formatProviderError(error: unknown) {
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  return "Unknown provider error.";
 }

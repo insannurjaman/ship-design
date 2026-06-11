@@ -43,7 +43,11 @@ export default async function ProjectOutputsPage({ params, searchParams }: Proje
             model: generationRun.model,
             mode: generationRun.mode,
             createdAt: generationRun.createdAt,
-            warnings: generationRun.warnings
+            warnings: generationRun.warnings,
+            attemptedProviders: generationRun.attemptedProviders,
+            fallbackUsed: generationRun.fallbackUsed,
+            finalProvider: generationRun.finalProvider,
+            providerWarnings: generationRun.providerWarnings
           }}
         />
       </AppShell>

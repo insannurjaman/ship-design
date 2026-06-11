@@ -14,7 +14,6 @@ export type AiGatewayConfig = {
   mode: AiGenerationMode;
   selectedProvider: AiProviderId;
   providerConfigs: Record<AiProviderId, AiProviderConfig>;
-  fallbackWarning?: string;
 };
 
 function readMode(): AiGenerationMode {
@@ -136,16 +135,26 @@ export function getAiGatewayConfig(): AiGatewayConfig {
   }
 
   const requestedProvider = readSelectedProvider();
-  const hasApiKey = Boolean(providerConfigs[requestedProvider].apiKey);
-  const selectedProvider = hasApiKey ? requestedProvider : "mock";
 
   return {
     mode,
-    selectedProvider,
-    providerConfigs,
-    fallbackWarning:
-      selectedProvider === "mock"
-        ? `Real AI mode is enabled for ${requestedProvider}, but its API key is missing. Ship Design fell back to mock generation.`
-        : undefined
+    selectedProvider: requestedProvider,
+    providerConfigs
   };
+}
+
+export function getRealProviderFallbackOrder(selectedProvider: AiProviderId): Exclude<AiProviderId, "mock">[] {
+  if (selectedProvider === "groq") {
+    return ["groq", "gemini", "openrouter", "huggingface"];
+  }
+
+  if (selectedProvider === "openrouter") {
+    return ["openrouter", "gemini", "groq", "huggingface"];
+  }
+
+  if (selectedProvider === "huggingface") {
+    return ["huggingface", "gemini", "groq", "openrouter"];
+  }
+
+  return ["gemini", "groq", "openrouter", "huggingface"];
 }
