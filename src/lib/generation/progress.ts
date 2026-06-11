@@ -1,4 +1,5 @@
 import type { AiGenerationMode, AiProviderId, AiTokenUsage } from "@/lib/ai/types";
+import type { ArtifactVersion } from "@/lib/generation/artifact-versions";
 
 export type CreateGenerationRunRequest = {
   productName: string;
@@ -30,6 +31,8 @@ export type GenerationArtifact = {
   fallbackUsed: boolean;
   finalProvider: AiProviderId;
   providerWarnings: string[];
+  activeVersion: number;
+  versions: ArtifactVersion[];
 };
 
 export type GenerationStepStatus = "queued" | "running" | "complete" | "error";

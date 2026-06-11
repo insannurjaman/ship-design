@@ -1,4 +1,5 @@
 import type { AiGenerateResponse } from "@/lib/ai/types";
+import { createArtifactVersion } from "@/lib/generation/artifact-versions";
 import type { CreateGenerationRunRequest, GenerationArtifact } from "@/lib/generation/progress";
 
 export type GenerationArtifactSpec = {
@@ -75,13 +76,29 @@ export function renderGenerationArtifact(
 ): GenerationArtifact {
   const markdown = response.text.trim() || `# ${spec.title}\n\nNo content was generated.`;
   const body = toBodyLines(markdown);
+  const summary = createSummary(body, spec);
+  const version = createArtifactVersion({
+    version: 1,
+    markdown,
+    summary,
+    body,
+    provider: response.provider,
+    model: response.model,
+    mode: response.mode,
+    usage: response.usage,
+    warnings: response.warnings,
+    attemptedProviders: response.attemptedProviders,
+    fallbackUsed: response.fallbackUsed,
+    finalProvider: response.finalProvider,
+    providerWarnings: response.providerWarnings
+  });
 
   return {
     id: spec.id,
     title: spec.title,
     type: spec.type,
     status: "ready",
-    summary: createSummary(body, spec),
+    summary,
     body,
     markdown,
     provider: response.provider,
@@ -92,7 +109,9 @@ export function renderGenerationArtifact(
     attemptedProviders: response.attemptedProviders,
     fallbackUsed: response.fallbackUsed,
     finalProvider: response.finalProvider,
-    providerWarnings: response.providerWarnings
+    providerWarnings: response.providerWarnings,
+    activeVersion: version.version,
+    versions: [version]
   };
 }
 

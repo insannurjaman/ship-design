@@ -37,6 +37,7 @@ export default async function ProjectOutputsPage({ params, searchParams }: Proje
           projectId="generated"
           outputs={generationRun.artifacts}
           figmaConnection={mockFigmaConnection}
+          runId={generationRun.id}
           regenerateHref={`/projects/generated?generationRunId=${encodeURIComponent(generationRun.id)}`}
           runInfo={{
             provider: generationRun.provider,

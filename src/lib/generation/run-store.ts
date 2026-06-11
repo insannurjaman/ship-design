@@ -17,6 +17,10 @@ export function saveGenerationRun(run: GenerationRun) {
   return run;
 }
 
+export function updateGenerationRun(run: GenerationRun) {
+  return saveGenerationRun(run);
+}
+
 export function getGenerationRun(runId: string) {
   return generationRuns.get(runId);
 }

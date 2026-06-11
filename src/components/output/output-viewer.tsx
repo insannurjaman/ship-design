@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import { ArtifactContentRenderer } from "@/components/output/artifact-content-renderer";
+import { ArtifactVersionPanel, type ViewerArtifactVersion } from "@/components/output/artifact-version-panel";
 import { FigmaStatusPanel } from "@/components/output/figma-status-panel";
+import { RegenerateArtifactDialog } from "@/components/output/regenerate-artifact-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
@@ -24,6 +26,8 @@ type ViewerOutputArtifact = OutputArtifact & {
   fallbackUsed?: boolean;
   finalProvider?: AiProviderId;
   providerWarnings?: string[];
+  activeVersion?: number;
+  versions?: ViewerArtifactVersion[];
 };
 
 type OutputViewerProps = {
@@ -46,6 +50,7 @@ type OutputViewerProps = {
     providerWarnings?: string[];
   };
   regenerateHref?: string;
+  runId?: string;
 };
 
 export function OutputViewer({
@@ -53,13 +58,18 @@ export function OutputViewer({
   outputs,
   figmaConnection,
   runInfo,
-  regenerateHref
+  regenerateHref,
+  runId
 }: OutputViewerProps) {
+  const [viewerOutputs, setViewerOutputs] = useState<ViewerOutputArtifact[]>(outputs);
   const [copyState, setCopyState] = useState<"idle" | "copied">("idle");
   const [exportState, setExportState] = useState<ExportState>("idle");
   const [figmaState, setFigmaState] = useState<FigmaActionState>("connected");
+  const [regeneratingArtifactId, setRegeneratingArtifactId] = useState<string | null>(null);
+  const [regenerationError, setRegenerationError] = useState<string | null>(null);
+  const [regenerationNotice, setRegenerationNotice] = useState<string | null>(null);
 
-  const markdown = outputs
+  const markdown = viewerOutputs
     .map((output) => [
       `# ${output.title}`,
       "",
@@ -71,6 +81,7 @@ export function OutputViewer({
   const fallbackUsed = Boolean(runInfo?.fallbackUsed);
   const providerWarnings = runInfo?.providerWarnings ?? [];
   const warningText = createProviderWarningText(runInfo);
+  const canRegenerate = Boolean(runId);
 
   async function copyOutput() {
     try {
@@ -108,7 +119,50 @@ export function OutputViewer({
     window.setTimeout(() => setFigmaState("sent"), 900);
   }
 
-  const items: TabItem[] = outputs.map((output) => ({
+  async function regenerateOutputArtifact(artifactId: string, feedback?: string) {
+    if (!runId) return;
+
+    setRegenerationError(null);
+    setRegenerationNotice(null);
+    setRegeneratingArtifactId(artifactId);
+
+    try {
+      const response = await fetch(`/api/generation-runs/${encodeURIComponent(runId)}/regenerate`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          artifactId,
+          feedback
+        })
+      });
+      const payload = (await response.json().catch(() => null)) as
+        | {
+            artifact?: ViewerOutputArtifact;
+            activeVersion?: number;
+            warnings?: string[];
+            error?: string;
+          }
+        | null;
+
+      if (!response.ok || !payload?.artifact) {
+        setRegenerationError(payload?.error ?? "Ship Design could not regenerate this artifact. The active version was not changed.");
+        return;
+      }
+
+      setViewerOutputs((current) =>
+        current.map((output) => (output.id === artifactId ? payload.artifact as ViewerOutputArtifact : output))
+      );
+      setRegenerationNotice(`Regenerated ${payload.artifact.title} as version ${payload.activeVersion ?? payload.artifact.activeVersion}.`);
+    } catch {
+      setRegenerationError("Network error while regenerating this artifact. The active version was not changed.");
+    } finally {
+      setRegeneratingArtifactId(null);
+    }
+  }
+
+  const items: TabItem[] = viewerOutputs.map((output) => ({
     id: output.id,
     label: output.title,
     content: (
@@ -119,23 +173,38 @@ export function OutputViewer({
             <h2 className="mt-2 text-2xl font-semibold">{output.title}</h2>
             <p className="mt-3 max-w-3xl text-sm leading-6 text-ink-secondary">{output.summary}</p>
           </div>
-          <Badge
-            tone={
-              output.status === "ready"
-                ? "success"
-                : output.status === "error"
-                  ? "danger"
-                  : output.status === "needs-review"
-                    ? "warning"
-                    : "default"
-            }
-          >
-            {output.status}
-          </Badge>
+          <div className="flex flex-wrap gap-2">
+            <Badge
+              tone={
+                output.status === "ready"
+                  ? "success"
+                  : output.status === "error"
+                    ? "danger"
+                    : output.status === "needs-review"
+                      ? "warning"
+                      : "default"
+              }
+            >
+              {output.status}
+            </Badge>
+            <Badge tone="accent">Active v{output.activeVersion ?? 1}</Badge>
+          </div>
         </div>
         <div className="border border-line bg-surface-base p-5 sm:p-6">
           <ArtifactContentRenderer markdown={output.markdown ?? createMarkdownFromOutput(output)} />
         </div>
+        {canRegenerate ? (
+          <RegenerateArtifactDialog
+            artifactTitle={output.title}
+            disabled={Boolean(regeneratingArtifactId)}
+            isLoading={regeneratingArtifactId === output.id}
+            onSubmit={(feedback) => regenerateOutputArtifact(output.id, feedback)}
+          />
+        ) : null}
+        <ArtifactVersionPanel
+          activeVersion={output.activeVersion ?? 1}
+          versions={output.versions}
+        />
       </article>
     )
   }));
@@ -202,7 +271,15 @@ export function OutputViewer({
               {exportState === "ready" ? <StatusPill tone="complete">Export ready</StatusPill> : null}
               {figmaState === "syncing" ? <StatusPill tone="running" pulse>Preparing mock Figma package</StatusPill> : null}
               {figmaState === "sent" ? <StatusPill tone="complete">Mock Figma package ready</StatusPill> : null}
+              {regeneratingArtifactId ? <StatusPill tone="running" pulse>Regenerating artifact</StatusPill> : null}
+              {regenerationNotice ? <StatusPill tone="complete">{regenerationNotice}</StatusPill> : null}
             </div>
+            {regenerationError ? (
+              <div className="mt-4 border border-status-danger/70 bg-status-danger/10 p-4" aria-live="assertive">
+                <Badge tone="danger">Regeneration failed</Badge>
+                <p className="mt-3 text-sm leading-6 text-ink-secondary">{regenerationError}</p>
+              </div>
+            ) : null}
             <p className="mt-3 font-mono text-xs uppercase text-ink-muted">
               Figma API is not connected yet. This action prepares a local package only.
             </p>
@@ -227,10 +304,10 @@ export function OutputViewer({
             <h2 className="font-mono text-sm uppercase text-ink-secondary">Package map</h2>
           </CardHeader>
           <CardBody className="grid gap-2">
-            {outputs.map((output) => (
+            {viewerOutputs.map((output) => (
               <div key={output.id} className="flex items-center justify-between gap-3 border border-line bg-surface-base p-3">
                 <span className="text-sm text-ink-secondary">{output.title}</span>
-                <span className="font-mono text-xs uppercase text-ink-muted">{output.type}</span>
+                <span className="font-mono text-xs uppercase text-ink-muted">v{output.activeVersion ?? 1}</span>
               </div>
             ))}
           </CardBody>
