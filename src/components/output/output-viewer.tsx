@@ -335,8 +335,8 @@ export function OutputViewer({
               <p className="mt-3 text-sm leading-6 text-ink-secondary">{warningText}</p>
               {providerWarnings.length > 0 ? (
                 <ul className="mt-3 grid gap-2 text-sm leading-6 text-ink-muted">
-                  {providerWarnings.map((warning) => (
-                    <li key={warning}>- {warning}</li>
+                  {providerWarnings.map((warning, warningIndex) => (
+                    <li key={`provider-warning-${warningIndex}`}>- {warning}</li>
                   ))}
                 </ul>
               ) : null}

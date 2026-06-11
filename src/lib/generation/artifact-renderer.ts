@@ -1,5 +1,10 @@
 import type { AiGenerateResponse } from "@/lib/ai/types";
 import { createArtifactVersion } from "@/lib/generation/artifact-versions";
+import {
+  createArtifactSummary,
+  markdownToBodyLines,
+  normalizeMarkdownForDisplay
+} from "@/lib/generation/markdown-cleanup";
 import type { CreateGenerationRunRequest, GenerationArtifact } from "@/lib/generation/progress";
 
 export type GenerationArtifactSpec = {
@@ -147,9 +152,9 @@ export function renderGenerationArtifact(
   spec: GenerationArtifactSpec,
   response: AiGenerateResponse
 ): GenerationArtifact {
-  const markdown = response.text.trim() || `# ${spec.title}\n\nNo content was generated.`;
-  const body = toBodyLines(markdown);
-  const summary = createSummary(body, spec);
+  const markdown = normalizeMarkdownForDisplay(response.text.trim() || `# ${spec.title}\n\nNo content was generated.`);
+  const body = markdownToBodyLines(markdown);
+  const summary = createArtifactSummary(markdown, spec.title);
   const version = createArtifactVersion({
     version: 1,
     markdown,
@@ -186,22 +191,4 @@ export function renderGenerationArtifact(
     activeVersion: version.version,
     versions: [version]
   };
-}
-
-function toBodyLines(markdown: string) {
-  return markdown
-    .split(/\n+/)
-    .map((line) => line.replace(/^#{1,6}\s*/, "").trim())
-    .filter(Boolean)
-    .slice(0, 12);
-}
-
-function createSummary(body: string[], spec: GenerationArtifactSpec) {
-  const firstUsefulLine = body.find((line) => !line.startsWith("- "));
-
-  if (firstUsefulLine) {
-    return firstUsefulLine.slice(0, 180);
-  }
-
-  return `${spec.title} generated for the current Ship Design intake.`;
 }

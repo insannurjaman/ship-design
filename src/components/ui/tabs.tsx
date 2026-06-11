@@ -27,7 +27,7 @@ export function Tabs({ items, defaultValue, className }: TabsProps) {
       <div
         role="tablist"
         aria-label="Tabs"
-        className="flex min-h-11 items-center gap-2 overflow-x-auto border border-line bg-surface-panel p-1"
+        className="flex min-h-11 w-full min-w-0 items-center gap-2 overflow-x-auto scroll-px-2 border border-line bg-surface-panel p-1"
       >
         {items.map((item) => {
           const isActive = item.id === selectedItem?.id;
@@ -43,7 +43,7 @@ export function Tabs({ items, defaultValue, className }: TabsProps) {
               disabled={item.disabled}
               onClick={() => setActiveTab(item.id)}
               className={cn(
-                "min-h-10 shrink-0 border px-3 py-2 font-mono text-xs font-medium uppercase tracking-normal transition-colors",
+                "min-h-10 shrink-0 whitespace-nowrap border px-3 py-2 font-mono text-xs font-medium uppercase tracking-normal transition-colors",
                 "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-green",
                 isActive
                   ? "border-accent-green bg-accent-soft text-accent-green"

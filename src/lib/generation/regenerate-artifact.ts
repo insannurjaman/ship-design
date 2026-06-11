@@ -16,6 +16,11 @@ import {
   generationArtifactSpecs,
   type GenerationArtifactSpec
 } from "@/lib/generation/artifact-renderer";
+import {
+  createArtifactSummary,
+  markdownToBodyLines,
+  normalizeMarkdownForDisplay
+} from "@/lib/generation/markdown-cleanup";
 import type { GenerationArtifact, GenerationRun } from "@/lib/generation/progress";
 import { getGenerationRun, updateGenerationRun } from "@/lib/generation/run-store";
 
@@ -91,9 +96,9 @@ export async function regenerateArtifact(
     }
   });
 
-  const markdown = response.text.trim() || currentVersion.markdown;
-  const body = toBodyLines(markdown);
-  const summary = createSummary(body, spec);
+  const markdown = normalizeMarkdownForDisplay(response.text.trim() || currentVersion.markdown);
+  const body = markdownToBodyLines(markdown);
+  const summary = createArtifactSummary(markdown, spec.title);
   const nextVersion = createArtifactVersion({
     version: getNextArtifactVersionNumber(artifact),
     markdown,
@@ -183,24 +188,6 @@ function recalculateRunMetadata(run: GenerationRun): GenerationRun {
     finalProvider,
     providerWarnings
   };
-}
-
-function toBodyLines(markdown: string) {
-  return markdown
-    .split(/\n+/)
-    .map((line) => line.replace(/^#{1,6}\s*/, "").trim())
-    .filter(Boolean)
-    .slice(0, 12);
-}
-
-function createSummary(body: string[], spec: GenerationArtifactSpec) {
-  const firstUsefulLine = body.find((line) => !line.startsWith("- "));
-
-  if (firstUsefulLine) {
-    return firstUsefulLine.slice(0, 180);
-  }
-
-  return `${spec.title} regenerated for the current Ship Design intake.`;
 }
 
 function normalizeFeedback(feedback?: string) {
