@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { ArtifactContentRenderer } from "@/components/output/artifact-content-renderer";
 import { FigmaStatusPanel } from "@/components/output/figma-status-panel";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -32,6 +33,7 @@ type OutputViewerProps = {
     provider: string;
     model: string;
     mode: "mock" | "real";
+    createdAt?: string;
     warnings?: string[];
   };
   regenerateHref?: string;
@@ -57,6 +59,7 @@ export function OutputViewer({
       output.markdown ?? output.body.map((paragraph) => `- ${paragraph}`).join("\n")
     ].join("\n"))
     .join("\n\n---\n\n");
+  const fallbackUsed = Boolean(runInfo?.warnings?.length);
 
   async function copyOutput() {
     try {
@@ -98,7 +101,7 @@ export function OutputViewer({
     id: output.id,
     label: output.title,
     content: (
-      <article className="grid gap-5">
+      <article className="grid gap-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <p className="font-mono text-xs uppercase text-accent-green">{output.type}</p>
@@ -119,12 +122,8 @@ export function OutputViewer({
             {output.status}
           </Badge>
         </div>
-        <div className="grid gap-3">
-          {output.body.map((paragraph) => (
-            <p key={paragraph} className="border border-line bg-surface-base p-4 text-sm leading-7 text-ink-secondary">
-              {paragraph}
-            </p>
-          ))}
+        <div className="border border-line bg-surface-base p-5 sm:p-6">
+          <ArtifactContentRenderer markdown={output.markdown ?? createMarkdownFromOutput(output)} />
         </div>
       </article>
     )
@@ -140,7 +139,7 @@ export function OutputViewer({
                 <p className="font-mono text-xs uppercase text-ink-muted">Artifact tabs</p>
                 <h2 className="mt-2 text-xl font-semibold">Review package outputs</h2>
                 <p className="mt-2 text-sm leading-6 text-ink-secondary">
-                  Select an artifact, review generated content, then copy, export, or send the approved package to Figma.
+                  Select an artifact, review generated content, then copy, export, or prepare the approved structure for a future Figma sync.
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -151,10 +150,23 @@ export function OutputViewer({
                   {exportState === "ready" ? "Export ready" : "Export"}
                 </Button>
                 <Button variant="primary" loading={figmaState === "syncing"} onClick={sendToFigma}>
-                  {figmaState === "sent" ? "Sent to Figma" : "Send to Figma"}
+                  {figmaState === "sent" ? "Figma package prepared" : "Prepare Figma package"}
                 </Button>
               </div>
             </div>
+            {runInfo ? (
+              <div className="mt-5 grid gap-2 border border-line bg-surface-base p-3 sm:grid-cols-2 xl:grid-cols-5">
+                <MetadataItem label="Provider" value={runInfo.provider} />
+                <MetadataItem label="Mode" value={runInfo.mode} />
+                <MetadataItem label="Model" value={runInfo.model} />
+                <MetadataItem label="Generated" value={formatGeneratedAt(runInfo.createdAt)} />
+                <MetadataItem label="Fallback" value={fallbackUsed ? "yes" : "no"} tone={fallbackUsed ? "warning" : "default"} />
+              </div>
+            ) : (
+              <div className="mt-5 border border-line bg-surface-base p-3">
+                <MetadataItem label="Mode" value="local demo" />
+              </div>
+            )}
             <div className="mt-4 flex flex-wrap gap-2" aria-live="polite">
               {runInfo ? (
                 <>
@@ -170,9 +182,12 @@ export function OutputViewer({
               {copyState === "copied" ? <StatusPill tone="complete">Copied to clipboard</StatusPill> : null}
               {exportState === "loading" ? <StatusPill tone="running" pulse>Preparing export</StatusPill> : null}
               {exportState === "ready" ? <StatusPill tone="complete">Export ready</StatusPill> : null}
-              {figmaState === "syncing" ? <StatusPill tone="running" pulse>Figma syncing</StatusPill> : null}
-              {figmaState === "sent" ? <StatusPill tone="complete">Figma sent</StatusPill> : null}
+              {figmaState === "syncing" ? <StatusPill tone="running" pulse>Preparing mock Figma package</StatusPill> : null}
+              {figmaState === "sent" ? <StatusPill tone="complete">Mock Figma package ready</StatusPill> : null}
             </div>
+            <p className="mt-3 font-mono text-xs uppercase text-ink-muted">
+              Figma API is not connected yet. This action prepares a local package only.
+            </p>
           </CardHeader>
           <CardBody>
             <Tabs items={items} defaultValue={outputs[0]?.id} />
@@ -223,4 +238,42 @@ export function OutputViewer({
       </aside>
     </div>
   );
+}
+
+function MetadataItem({
+  label,
+  value,
+  tone = "default"
+}: {
+  label: string;
+  value: string;
+  tone?: "default" | "warning";
+}) {
+  return (
+    <div className="min-w-0">
+      <p className="font-mono text-[11px] uppercase text-ink-muted">{label}</p>
+      <p className={tone === "warning" ? "mt-1 truncate font-mono text-xs text-status-warning" : "mt-1 truncate font-mono text-xs text-ink-secondary"}>
+        {value}
+      </p>
+    </div>
+  );
+}
+
+function createMarkdownFromOutput(output: ViewerOutputArtifact) {
+  return [`# ${output.title}`, "", output.summary, "", ...output.body.map((paragraph) => `- ${paragraph}`)].join("\n");
+}
+
+function formatGeneratedAt(value?: string) {
+  if (!value) return "demo";
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) return value;
+
+  return date.toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
 }

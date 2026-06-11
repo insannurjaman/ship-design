@@ -27,6 +27,11 @@ export default async function ProjectOutputsPage({ params, searchParams }: Proje
         title="Output Viewer"
         eyebrow={generationRun.input.productName}
         description="Review generated product artifacts from this generation run, copy sections, export markdown, or send approved structure to Figma."
+        runInfo={{
+          provider: generationRun.provider,
+          model: generationRun.model,
+          mode: generationRun.mode
+        }}
       >
         <OutputViewer
           projectId="generated"
@@ -37,6 +42,7 @@ export default async function ProjectOutputsPage({ params, searchParams }: Proje
             provider: generationRun.provider,
             model: generationRun.model,
             mode: generationRun.mode,
+            createdAt: generationRun.createdAt,
             warnings: generationRun.warnings
           }}
         />

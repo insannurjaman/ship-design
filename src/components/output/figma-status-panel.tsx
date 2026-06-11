@@ -14,24 +14,24 @@ type FigmaStatusPanelProps = {
 
 const statusCopy: Record<FigmaStatus, { label: string; tone: "complete" | "running" | "error" | "info"; detail: string }> = {
   connected: {
-    label: "Connected",
-    tone: "complete",
-    detail: "Ready to receive approved product artifacts."
+    label: "Mock ready",
+    tone: "info",
+    detail: "Ready to prepare a local Figma package. The real Figma API is not connected yet."
   },
   syncing: {
-    label: "Syncing",
+    label: "Preparing",
     tone: "running",
-    detail: "Sending the current artifact package to the Figma foundation."
+    detail: "Preparing the current artifact package locally for a future Figma handoff."
   },
   sent: {
-    label: "Sent",
+    label: "Prepared",
     tone: "complete",
-    detail: "Latest mock package has been handed to the Figma-ready structure."
+    detail: "Mock Figma package is ready. No real Figma sync has been performed."
   },
   error: {
     label: "Retry needed",
     tone: "error",
-    detail: "Figma handoff failed locally. Retry without losing approved outputs."
+    detail: "Local Figma package preparation failed. Retry without losing approved outputs."
   }
 };
 
@@ -72,7 +72,7 @@ export function FigmaStatusPanel({
         </div>
         {status === "error" && onRetry ? (
           <Button variant="danger" onClick={onRetry}>
-            Retry Figma sync
+            Retry package prep
           </Button>
         ) : null}
       </CardBody>

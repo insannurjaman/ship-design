@@ -10,6 +10,11 @@ type AppShellProps = {
   eyebrow?: string;
   description?: string;
   actions?: React.ReactNode;
+  runInfo?: {
+    provider: string;
+    model: string;
+    mode: "mock" | "real";
+  };
 };
 
 export function AppShell({
@@ -17,8 +22,12 @@ export function AppShell({
   title,
   eyebrow = "Workspace",
   description,
-  actions
+  actions,
+  runInfo
 }: AppShellProps) {
+  const shellModeLabel = runInfo ? `Mode ${runInfo.mode}` : "Demo mode";
+  const shellModeTone = runInfo?.mode === "real" ? "complete" : "info";
+
   return (
     <div className="min-h-screen bg-surface-base text-ink-primary">
       <div className="grid min-h-screen grid-cols-1 lg:grid-cols-[260px_minmax(0,1fr)]">
@@ -38,11 +47,23 @@ export function AppShell({
           <div className="hidden shrink-0 border-t border-line p-4 lg:mt-auto lg:block">
             <div className="border border-line bg-surface-base p-4">
               <p className="font-mono text-xs uppercase text-ink-muted">System</p>
-              <div className="mt-3 flex items-center justify-between gap-3">
-                <span className="text-sm text-ink-secondary">Generation mode</span>
-                <StatusPill tone="info">
-                  Local
-                </StatusPill>
+              <div className="mt-3 grid gap-3">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-sm text-ink-secondary">Generation</span>
+                  <StatusPill tone={shellModeTone}>{shellModeLabel}</StatusPill>
+                </div>
+                {runInfo ? (
+                  <div className="grid gap-2 border-t border-line pt-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="font-mono text-xs uppercase text-ink-muted">Provider</span>
+                      <span className="truncate text-right font-mono text-xs text-ink-secondary">{runInfo.provider}</span>
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="font-mono text-xs uppercase text-ink-muted">Model</span>
+                      <span className="truncate text-right font-mono text-xs text-ink-secondary">{runInfo.model}</span>
+                    </div>
+                  </div>
+                ) : null}
               </div>
             </div>
           </div>
@@ -62,7 +83,17 @@ export function AppShell({
                 ) : null}
               </div>
               <div className="flex flex-wrap items-center gap-3">
-                <Badge tone="accent">Local mode</Badge>
+                <Badge tone={runInfo?.mode === "real" ? "success" : "accent"}>
+                  {runInfo ? `Mode ${runInfo.mode}` : "Local demo"}
+                </Badge>
+                {runInfo ? (
+                  <>
+                    <Badge tone={runInfo.provider === "mock" ? "info" : "success"}>
+                      Provider {runInfo.provider}
+                    </Badge>
+                    <Badge tone="info">Model {runInfo.model}</Badge>
+                  </>
+                ) : null}
                 {actions}
               </div>
             </div>

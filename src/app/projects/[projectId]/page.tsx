@@ -45,6 +45,11 @@ export default async function ProjectPage({ params, searchParams }: ProjectPageP
         title="Agent Workflow Progress"
         eyebrow={generatedProject.name}
         description={generatedProject.goal}
+        runInfo={{
+          provider: generationRun.provider,
+          model: generationRun.model,
+          mode: generationRun.mode
+        }}
         actions={
           <Button href={outputViewerHref} variant="primary">
             Open Output Viewer
