@@ -69,7 +69,7 @@ Ship Design currently has:
 - Context budgeting for downstream artifact generation
 - Artifact regeneration and version history
 - Visual artifact review for user flows, UI screens, and design system kits
-- Copy output, markdown export, and local mock Figma package preparation
+- Copy output, markdown export, and manual Figma-ready package preparation
 - A token-based dark technical UI direction
 
 Persistent database storage, authentication, payments, and live Figma API writes are not connected yet.

@@ -14,7 +14,7 @@ export function SegmentedControl({ label, options, value, onChange, disabled }: 
   return (
     <div className="grid gap-3">
       <p className="font-mono text-xs font-medium uppercase text-ink-muted">{label}</p>
-      <div className="grid gap-2 sm:grid-cols-3" role="group" aria-label={label}>
+      <div className="grid gap-2 sm:grid-cols-2" role="group" aria-label={label}>
         {options.map((option) => {
           const optionValue = typeof option === "string" ? option : option.value;
           const optionLabel = typeof option === "string" ? option : option.label;

@@ -16,22 +16,22 @@ const statusCopy: Record<FigmaStatus, { label: string; tone: "complete" | "runni
   connected: {
     label: "Mock ready",
     tone: "info",
-    detail: "Ready to prepare a local Figma package. The real Figma API is not connected yet."
+    detail: "Ready to prepare a manual Figma-ready package. The real Figma API is not connected yet."
   },
   syncing: {
     label: "Preparing",
     tone: "running",
-    detail: "Preparing the current artifact package locally for a future Figma handoff."
+    detail: "Preparing the current artifact package locally for manual Figma handoff."
   },
   sent: {
     label: "Prepared",
     tone: "complete",
-    detail: "Mock Figma package is ready. No real Figma sync has been performed."
+    detail: "Manual Figma-ready package is prepared. No real Figma API write has been performed."
   },
   error: {
     label: "Retry needed",
     tone: "error",
-    detail: "Local Figma package preparation failed. Retry without losing approved outputs."
+    detail: "Manual Figma package preparation failed. Retry without losing approved outputs."
   }
 };
 
@@ -48,7 +48,7 @@ export function FigmaStatusPanel({
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between gap-4">
-          <h2 className="font-mono text-sm uppercase text-ink-secondary">Figma handoff</h2>
+          <h2 className="font-mono text-sm uppercase text-ink-secondary">Manual Figma handoff</h2>
           <StatusPill tone={copy.tone} pulse={status === "syncing"}>
             {copy.label}
           </StatusPill>

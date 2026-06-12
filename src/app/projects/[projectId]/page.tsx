@@ -1,4 +1,5 @@
 import { AgentWorkflowSimulation } from "@/components/agent/agent-workflow-simulation";
+import { PendingGenerationRun } from "@/components/agent/pending-generation-run";
 import { AppShell } from "@/components/layout/app-shell";
 import { StatePanel } from "@/components/layout/state-panel";
 import { Button } from "@/components/ui/button";
@@ -18,17 +19,29 @@ import { redirect } from "next/navigation";
 
 type ProjectPageProps = {
   params: Promise<{ projectId: string }>;
-  searchParams: Promise<{ generationRunId?: string; run?: string; step?: string }>;
+  searchParams: Promise<{ generationRunId?: string; pending?: string; run?: string; step?: string }>;
 };
 
 export default async function ProjectPage({ params, searchParams }: ProjectPageProps) {
   const { projectId } = await params;
-  const { generationRunId, run, step } = await searchParams;
+  const { generationRunId, pending, run, step } = await searchParams;
   const project = mockProjects.find((item) => item.id === projectId) ?? mockProjects[0];
   const shouldRun = run === "mock";
 
   if (step) {
     redirect(shouldRun ? `/projects/${project.id}?run=mock` : `/projects/${project.id}`);
+  }
+
+  if (pending === "1") {
+    return (
+      <AppShell
+        title="Agent Workflow Progress"
+        eyebrow="Generating"
+        description="Ship Design is creating your selected artifacts. You can open the Output Viewer after the run completes."
+      >
+        <PendingGenerationRun />
+      </AppShell>
+    );
   }
 
   if (generationRunId) {

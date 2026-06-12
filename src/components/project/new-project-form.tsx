@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,6 @@ import { CheckboxRow } from "@/components/project/checkbox-row";
 import { SegmentedControl } from "@/components/project/segmented-control";
 import { StatusPill } from "@/components/ui/status-pill";
 import { Textarea } from "@/components/ui/textarea";
-import { Progress } from "@/components/ui/progress";
 import {
   outputScopeHelperText,
   requiredOutputLabels,
@@ -18,28 +17,10 @@ import {
 } from "@/lib/output-scope";
 import { platformLabels, type GenerationPlatform } from "@/lib/platforms";
 
-type GenerationRunResponse = {
-  id: string;
-  status: "complete" | "error";
-  mode: "mock" | "real";
-  provider: string;
-  warnings: string[];
-  fallbackUsed?: boolean;
-  providerWarnings?: string[];
-  providerDiagnostics?: Array<{
-    provider: string;
-    summary: string;
-    detail: string;
-    status?: number;
-  }>;
-};
-
 type GenerationRunErrorResponse = {
   error?: string;
   fieldErrors?: Record<string, string>;
 };
-
-type SubmitPhase = "idle" | "preparing" | "generating";
 
 export type NewProjectFormValues = {
   productName: string;
@@ -81,27 +62,7 @@ const sampleFormValues: NewProjectFormValues = {
     "Dark technical interface, acid green accent, crisp 1px borders, minimal radius, mono labels, and a premium developer-tool SaaS feel."
 };
 
-const statusMessages = [
-  "Reading product idea",
-  "Creating product strategy",
-  "Mapping user needs",
-  "Building core user flows",
-  "Preparing screen inventory",
-  "Drafting design system structure",
-  "Creating Figma-ready output",
-  "Preparing handoff package"
-];
-
-const outputAgentLabels: Record<string, string> = {
-  "Product Brief": "Product Strategy Agent",
-  "UX Docs": "UX Research Agent",
-  "User Flows": "UX Flow Agent",
-  "Screen List": "Screen Inventory Agent",
-  "Design System Kit": "Design System Agent",
-  "UI Screens": "Figma Builder Agent",
-  "Landing Page Copy": "Landing Page Agent",
-  "Handoff Docs": "QA Handoff Agent"
-};
+const pendingGenerationStorageKey = "ship-design:pending-generation-run";
 
 export function NewProjectForm({
   selectedOutputs,
@@ -112,20 +73,12 @@ export function NewProjectForm({
   onSelectFullPackage
 }: NewProjectFormProps) {
   const router = useRouter();
-  const [submitPhase, setSubmitPhase] = useState<SubmitPhase>("idle");
-  const [simulatedProgress, setSimulatedProgress] = useState(0);
-  const [statusMessageIndex, setStatusMessageIndex] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formValues, setFormValues] = useState<NewProjectFormValues>(emptyFormValues);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [platformError, setPlatformError] = useState<string | null>(null);
-  const [warningMessage, setWarningMessage] = useState<string | null>(null);
   const requiredOutputs = new Set<string>(requiredOutputLabels);
-  const isGenerating = submitPhase !== "idle";
-  const activeTimelineIndex = Math.min(
-    selectedOutputs.length - 1,
-    Math.floor((simulatedProgress / 100) * selectedOutputs.length)
-  );
-  const activeAgentLabel = outputAgentLabels[selectedOutputs[activeTimelineIndex]] ?? "Ship Design Agent";
+  const isGenerating = isSubmitting;
   const readinessItems = [
     { label: "Product name", ready: Boolean(formValues.productName.trim()) },
     { label: "Product type", ready: Boolean(formValues.productType.trim()) },
@@ -136,95 +89,47 @@ export function NewProjectForm({
   ];
   const isReadyToGenerate = readinessItems.every((item) => item.ready);
 
-  useEffect(() => {
-    if (!isGenerating) {
-      setSimulatedProgress(0);
-      setStatusMessageIndex(0);
-      return;
-    }
-
-    const progressTimer = window.setInterval(() => {
-      setSimulatedProgress((current) => Math.min(92, current + (submitPhase === "preparing" ? 3 : 5)));
-    }, 320);
-    const messageTimer = window.setInterval(() => {
-      setStatusMessageIndex((current) => (current + 1) % statusMessages.length);
-    }, 1300);
-
-    return () => {
-      window.clearInterval(progressTimer);
-      window.clearInterval(messageTimer);
-    };
-  }, [isGenerating, submitPhase]);
-
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setSubmitPhase("preparing");
+    setIsSubmitting(true);
     setErrorMessage(null);
     setPlatformError(null);
-    setWarningMessage(null);
 
     if (!platform) {
       setPlatformError("Choose where this product will be designed first.");
-      setSubmitPhase("idle");
+      setIsSubmitting(false);
       return;
     }
 
-    const phaseTimer = window.setTimeout(() => setSubmitPhase("generating"), 450);
+    const fieldErrors = validateRequiredFormValues(formValues);
+
+    if (Object.keys(fieldErrors).length > 0) {
+      setErrorMessage(createErrorMessage({
+        error: "Add the missing intake details before generating.",
+        fieldErrors
+      }));
+      setIsSubmitting(false);
+      return;
+    }
 
     try {
-      const [response] = await Promise.all([
-        fetch("/api/generation-runs", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            productName: formValues.productName.trim(),
-            productType: formValues.productType.trim(),
-            targetUsers: formValues.targetUsers.trim(),
-            mainProblem: formValues.mainProblem.trim(),
-            productGoal: formValues.productGoal.trim(),
-            platform,
-            outputTypes: selectedOutputs,
-            preferredStyle: formValues.preferredStyle.trim()
-          })
-        }),
-        wait(1000)
-      ]);
-
-      const payload = (await response.json().catch(() => null)) as
-        | GenerationRunResponse
-        | GenerationRunErrorResponse
-        | null;
-
-      if (!response.ok) {
-        setErrorMessage(createErrorMessage(payload));
-        setSubmitPhase("idle");
-        return;
-      }
-
-      if (!payload || !("id" in payload)) {
-        setErrorMessage("Ship Design received an invalid generation response. Please try again.");
-        setSubmitPhase("idle");
-        return;
-      }
-
-      const warning = payload.providerDiagnostics?.[0]?.summary ?? payload.providerWarnings?.[0] ?? payload.warnings?.[0];
-
-      if (warning) {
-        setWarningMessage(warning);
-        window.setTimeout(() => {
-          router.push(`/projects/generated?generationRunId=${encodeURIComponent(payload.id)}`);
-        }, 900);
-        return;
-      }
-
-      router.push(`/projects/generated?generationRunId=${encodeURIComponent(payload.id)}`);
+      window.sessionStorage.setItem(
+        pendingGenerationStorageKey,
+        JSON.stringify({
+          productName: formValues.productName.trim(),
+          productType: formValues.productType.trim(),
+          targetUsers: formValues.targetUsers.trim(),
+          mainProblem: formValues.mainProblem.trim(),
+          productGoal: formValues.productGoal.trim(),
+          platform,
+          outputTypes: selectedOutputs,
+          preferredStyle: formValues.preferredStyle.trim()
+        })
+      );
+      router.push("/projects/generated?pending=1");
     } catch {
-      setErrorMessage("Could not create the generation run. Check the intake and try again.");
-      setSubmitPhase("idle");
-    } finally {
-      window.clearTimeout(phaseTimer);
+      setErrorMessage("Could not prepare the generation run in this browser. Check the intake and try again.");
+      setIsSubmitting(false);
     }
   }
 
@@ -423,24 +328,7 @@ export function NewProjectForm({
               </div>
             </div>
 
-            {isGenerating ? (
-              <GenerationProgressPanel
-                progress={simulatedProgress}
-                selectedOutputs={selectedOutputs}
-                activeIndex={activeTimelineIndex}
-                activeAgentLabel={activeAgentLabel}
-                statusMessage={statusMessages[statusMessageIndex]}
-                phase={submitPhase}
-              />
-            ) : null}
           </StepSection>
-
-          {warningMessage ? (
-            <div className="border border-status-warning/70 bg-status-warning/10 p-4" aria-live="polite">
-              <Badge tone="warning">Provider fallback</Badge>
-              <p className="mt-3 text-sm leading-6 text-ink-secondary">{warningMessage}</p>
-            </div>
-          ) : null}
 
           {errorMessage ? (
             <div className="border border-status-danger/70 bg-status-danger/10 p-4" aria-live="assertive">
@@ -455,7 +343,7 @@ export function NewProjectForm({
                 Ship Design will create your selected design artifacts.
               </p>
               <Button type="submit" variant="primary" size="lg" loading={isGenerating}>
-                {submitPhase === "preparing" ? "Preparing run" : submitPhase === "generating" ? "Generating package" : "Generate design package"}
+                {isGenerating ? "Opening progress" : "Generate design package"}
               </Button>
             </div>
           </div>
@@ -544,75 +432,19 @@ function ReadinessChecklist({ items }: { items: Array<{ label: string; ready: bo
   );
 }
 
-function GenerationProgressPanel({
-  progress,
-  selectedOutputs,
-  activeIndex,
-  activeAgentLabel,
-  statusMessage,
-  phase
-}: {
-  progress: number;
-  selectedOutputs: string[];
-  activeIndex: number;
-  activeAgentLabel: string;
-  statusMessage: string;
-  phase: SubmitPhase;
-}) {
-  return (
-    <div className="grid gap-4 border border-accent-green/60 bg-accent-soft p-4" aria-live="polite">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <Badge tone="accent">{phase === "preparing" ? "Preparing run" : "Generating package"}</Badge>
-          <h3 className="mt-3 text-lg font-semibold text-ink-primary">{statusMessage}</h3>
-          <p className="mt-2 text-sm leading-6 text-ink-secondary">
-            {activeAgentLabel} is working through {selectedOutputs.length} selected artifacts.
-          </p>
-        </div>
-        <StatusPill tone="running" pulse>
-          {phase === "preparing" ? "Queued" : "Running"}
-        </StatusPill>
-      </div>
+function validateRequiredFormValues(values: NewProjectFormValues) {
+  const fieldErrors: Record<string, string> = {};
 
-      <Progress value={progress} label="Generation progress" />
+  if (!values.productName.trim()) fieldErrors.productName = "Product name is required.";
+  if (!values.productType.trim()) fieldErrors.productType = "Product type is required.";
+  if (!values.targetUsers.trim()) fieldErrors.targetUsers = "Target users are required.";
+  if (!values.mainProblem.trim()) fieldErrors.mainProblem = "Main problem is required.";
+  if (!values.productGoal.trim()) fieldErrors.productGoal = "Product goal is required.";
 
-      <div className="grid gap-2 md:grid-cols-2">
-        {selectedOutputs.map((output, index) => {
-          const state = getPendingTimelineState(index, activeIndex, phase, progress);
-
-          return (
-            <div key={output} className="grid gap-2 border border-line bg-surface-base p-3">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="font-mono text-xs uppercase text-accent-green">{outputAgentLabels[output] ?? "Ship Design Agent"}</p>
-                  <p className="mt-1 text-sm text-ink-secondary">{output}</p>
-                </div>
-                <StatusPill tone={state === "Running" || state === "Finalizing" ? "running" : state === "Waiting" ? "info" : "queued"} pulse={state === "Running" || state === "Finalizing"}>
-                  {state}
-                </StatusPill>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
+  return fieldErrors;
 }
 
-function getPendingTimelineState(index: number, activeIndex: number, phase: SubmitPhase, progress: number) {
-  if (phase === "preparing") return index === 0 ? "Queued" : "Waiting";
-  if (progress >= 86 && index === activeIndex) return "Finalizing";
-  if (index < activeIndex) return "Waiting";
-  if (index === activeIndex) return "Running";
-
-  return "Queued";
-}
-
-function wait(ms: number) {
-  return new Promise((resolve) => window.setTimeout(resolve, ms));
-}
-
-function createErrorMessage(payload: GenerationRunErrorResponse | GenerationRunResponse | null) {
+function createErrorMessage(payload: GenerationRunErrorResponse | null) {
   if (!payload || !("error" in payload)) {
     return "Could not create the generation run. Check the intake and try again.";
   }

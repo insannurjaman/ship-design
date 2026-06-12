@@ -14,7 +14,7 @@ export const supportedV1Outputs = [
 export const futureOutputs = [] as const;
 
 export const outputScopeHelperText =
-  "Ship Design can generate 8 artifacts from one intake. Full packages use multiple AI calls; if free providers hit limits, generate fewer artifacts first.";
+  "Lite is recommended for free providers. Full package creates all 8 artifacts, uses more AI calls, and may trigger free provider limits.";
 
 export const requiredOutputLabels = ["Product Brief", "UX Docs", "User Flows"] as const;
 

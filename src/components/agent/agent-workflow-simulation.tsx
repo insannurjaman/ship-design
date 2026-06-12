@@ -131,7 +131,13 @@ export function AgentWorkflowSimulation({
                   {isComplete ? "Complete" : "Running"}
                 </StatusPill>
                 <StatusPill tone={hasRecoveredWarning ? "warning" : "info"}>
-                  {hasRecoveredWarning ? "Recovered warning" : runInfo ? `Provider ${runInfo.provider}` : "Local mock"}
+                  {runInfo?.fallbackUsed
+                    ? "Provider fallback"
+                    : hasRecoveredWarning
+                      ? "Recovered warning"
+                      : runInfo
+                        ? `Provider ${runInfo.provider}`
+                        : "Local mock"}
                 </StatusPill>
                 {runInfo ? (
                   <>
@@ -194,13 +200,15 @@ export function AgentWorkflowSimulation({
               <h2 className="font-mono text-sm uppercase text-ink-secondary">
                 Generated output preview
               </h2>
-              <Button
-                href={viewerHref}
-                size="sm"
-                variant={isComplete ? "primary" : "secondary"}
-              >
-                Open viewer
-              </Button>
+              {isComplete ? (
+                <Button
+                  href={viewerHref}
+                  size="sm"
+                  variant="primary"
+                >
+                  Open viewer
+                </Button>
+              ) : null}
             </div>
           </CardHeader>
           <CardBody className="grid gap-3 md:grid-cols-2">
@@ -234,8 +242,8 @@ export function AgentWorkflowSimulation({
         {runInfo?.fallbackUsed ? (
           <StatePanel
             tone="warning"
-            label="Provider warning"
-            title="Run completed with fallback"
+            label="Provider fallback"
+            title="Ship Design switched providers automatically to complete your package."
             description={`${generatedCount} artifacts generated. ${skippedCount} skipped. ${failedCount} failed. Final provider: ${runInfo.finalProvider ?? runInfo.provider}.`}
           />
         ) : null}
@@ -243,7 +251,7 @@ export function AgentWorkflowSimulation({
         {providerDiagnostics.length > 0 ? (
           <Card>
             <CardHeader>
-              <h2 className="font-mono text-sm uppercase text-status-warning">Provider details</h2>
+              <h2 className="font-mono text-sm uppercase text-status-warning">Technical details</h2>
             </CardHeader>
             <CardBody className="grid gap-2">
               {providerDiagnostics.map((diagnostic, diagnosticIndex) => (
@@ -260,7 +268,7 @@ export function AgentWorkflowSimulation({
           </Card>
         ) : runWarnings.length > 0 ? (
           <details className="border border-line bg-surface-base p-3">
-            <summary className="cursor-pointer font-mono text-xs uppercase text-status-warning">Provider details</summary>
+            <summary className="cursor-pointer font-mono text-xs uppercase text-status-warning">Technical details</summary>
             <ul className="mt-3 grid max-h-40 gap-2 overflow-y-auto text-sm leading-6 text-ink-muted">
               {runWarnings.map((warning, warningIndex) => (
                 <li key={`workflow-warning-${warningIndex}`} className="break-words">- {warning}</li>

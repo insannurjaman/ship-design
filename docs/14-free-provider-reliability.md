@@ -1,6 +1,6 @@
 # Free Provider Reliability
 
-Ship Design can generate the full 8-artifact package with free-first AI providers, but free APIs often have quota, token, model availability, and request-size limits. Phase 19.2 reduces those failures without adding persistence, auth, payment, or real Figma sync.
+Ship Design can generate the full 8-artifact package with free-first AI providers, but free APIs often have quota, token, model availability, and request-size limits. Phase 19.2 reduces those failures without adding persistence, auth, payment, or real Figma API write.
 
 ## Why Limits Happen
 

@@ -25,7 +25,7 @@ export const generationArtifactSpecs: GenerationArtifactSpec[] = [
     purpose: "Turn the product idea into a clear product strategy brief.",
     agentName: "Product Strategy Agent",
     instructions: [
-      "Summarize the audience, problem, promise, MVP scope, constraints, and success signals.",
+      "Use exactly these sections: Executive Summary, Audience, Problem, Promise, MVP Scope, Constraints, Success Signals, Next Design Implications.",
       "Keep the brief practical enough for a founder, designer, and engineer to review together.",
       "Use concise markdown sections.",
       "Avoid generic claims; tie every recommendation to the product intake."
@@ -38,7 +38,7 @@ export const generationArtifactSpecs: GenerationArtifactSpec[] = [
     purpose: "Create lightweight UX research documentation for the first validation pass.",
     agentName: "UX Research Agent",
     instructions: [
-      "Include target users, jobs to be done, assumptions, research questions, and product risks.",
+      "Use exactly these sections: Target Users, Jobs To Be Done, Assumptions, Research Questions, Product Risks, Validation Plan, UX Recommendations.",
       "Keep the output beginner-friendly without being vague.",
       "Use concise markdown sections.",
       "Prioritize research questions that can change product or design decisions."
@@ -65,7 +65,7 @@ export const generationArtifactSpecs: GenerationArtifactSpec[] = [
     purpose: "Turn strategy, research, and flows into a practical screen inventory.",
     agentName: "Screen Inventory Agent",
     instructions: [
-      "Include required screens, purpose, primary content, key components, states, navigation notes, and dependency artifacts.",
+      "Include screen table/cards with screen name, purpose, primary content, key components, states, navigation, and dependencies.",
       "Use one '## Screen: Screen Name' section per screen.",
       "Use Product Brief, UX Docs, and User Flows as dependencies.",
       "Keep the list implementation-ready for product designers and engineers."
@@ -79,6 +79,7 @@ export const generationArtifactSpecs: GenerationArtifactSpec[] = [
     agentName: "Design System Agent",
     instructions: [
       "Include primitive color palette, semantic tokens, light/dark mapping, typography scale, spacing scale, radius scale, shadow/elevation scale, component list, component state matrix, and Figma variable naming map.",
+      "Use exactly these sections: Primitive Color Palette, Semantic Color Tokens, Typography Scale, Spacing Scale, Radius Scale, Shadow/Elevation Scale, Component Starter Specs, Figma Variable Naming Table.",
       "Use clear token names that can become CSS variables, Tailwind config, and Figma variables.",
       "Use Product Brief, Screen List, and preferred design style as dependencies.",
       "Keep the plan aligned to the Ship Design dark technical visual direction."
@@ -94,6 +95,7 @@ export const generationArtifactSpecs: GenerationArtifactSpec[] = [
       "Create structured UI screen specs, not a generic Figma organization plan.",
       "Use one '## Screen: Screen Name' section per screen.",
       "For each screen include: route or screen id, device target, purpose, layout sections, components, main copy, states, interaction notes, and design notes.",
+      "If platform is mobile, create mobile app frames. If platform is desktop, create desktop web frames.",
       "Make screens concrete enough to recreate manually in Figma.",
       "Use Screen List and Design System Kit as dependencies.",
       "Follow Ship Design Figma organization rules and keep real Figma API work out of scope."
@@ -119,7 +121,7 @@ export const generationArtifactSpecs: GenerationArtifactSpec[] = [
     purpose: "Create developer handoff documentation for the full generated package.",
     agentName: "QA Handoff Agent",
     instructions: [
-      "Summarize product decisions, screens, flows, design system, UI screens, states, QA checklist, implementation notes, and open questions.",
+      "Use exactly these sections: Product Overview, Design Decisions, Screens And Routes, Component Notes, States And Edge Cases, QA Checklist, Open Questions, Implementation Notes.",
       "Use all generated artifacts as dependencies.",
       "Keep the handoff useful for Codex, engineers, and designers reviewing the package."
     ]

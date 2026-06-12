@@ -249,7 +249,7 @@ export function OutputViewer({
                 <p className="font-mono text-xs uppercase text-ink-muted">Artifact tabs</p>
                 <h2 className="mt-2 text-xl font-semibold">Review package outputs</h2>
                 <p className="mt-2 text-sm leading-6 text-ink-secondary">
-                  Select an artifact, review generated content, then copy, export, or prepare the approved structure for a future Figma sync.
+                  Select an artifact, review generated content, then copy, export, or prepare a manual Figma-ready handoff.
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -260,7 +260,7 @@ export function OutputViewer({
                   {exportState === "ready" ? "Export ready" : "Export"}
                 </Button>
                 <Button variant="primary" loading={figmaState === "syncing"} onClick={sendToFigma}>
-                  {figmaState === "sent" ? "Figma package prepared" : "Prepare Figma package"}
+                  {figmaState === "sent" ? "Manual Figma package ready" : "Prepare manual Figma package"}
                 </Button>
               </div>
             </div>
@@ -299,8 +299,8 @@ export function OutputViewer({
               {copyState === "copied" ? <StatusPill tone="complete">Copied to clipboard</StatusPill> : null}
               {exportState === "loading" ? <StatusPill tone="running" pulse>Preparing export</StatusPill> : null}
               {exportState === "ready" ? <StatusPill tone="complete">Export ready</StatusPill> : null}
-              {figmaState === "syncing" ? <StatusPill tone="running" pulse>Preparing mock Figma package</StatusPill> : null}
-              {figmaState === "sent" ? <StatusPill tone="complete">Mock Figma package ready</StatusPill> : null}
+              {figmaState === "syncing" ? <StatusPill tone="running" pulse>Preparing manual Figma package</StatusPill> : null}
+              {figmaState === "sent" ? <StatusPill tone="complete">Manual Figma package ready</StatusPill> : null}
               {regeneratingArtifactId ? <StatusPill tone="running" pulse>Regenerating artifact</StatusPill> : null}
               {regenerationNotice ? <StatusPill tone="complete">{regenerationNotice}</StatusPill> : null}
             </div>
@@ -311,7 +311,7 @@ export function OutputViewer({
               </div>
             ) : null}
             <p className="mt-3 font-mono text-xs uppercase text-ink-muted">
-              Figma API is not connected yet. This action prepares a local package only.
+              Figma API is not connected yet. This action prepares a manual Figma-ready package only.
             </p>
           </CardHeader>
           <CardBody>
@@ -363,7 +363,7 @@ export function OutputViewer({
         {fallbackUsed && warningText ? (
           <Card className="border-status-warning/60">
             <CardBody>
-              <Badge tone="warning">Provider warning</Badge>
+              <Badge tone="warning">Provider fallback</Badge>
               <p className="mt-3 text-sm leading-6 text-ink-secondary">{warningText}</p>
               <p className="mt-2 text-sm leading-6 text-ink-muted">
                 {generatedViewerOutputs.length} of {viewerOutputs.length} artifacts generated.
@@ -384,7 +384,7 @@ export function OutputViewer({
                 </div>
               ) : providerWarnings.length > 0 ? (
                 <details className="mt-3 border border-line bg-surface-base p-3">
-                  <summary className="cursor-pointer font-mono text-xs uppercase text-status-warning">View details</summary>
+                  <summary className="cursor-pointer font-mono text-xs uppercase text-status-warning">Technical details</summary>
                   <ul className="mt-3 grid max-h-40 gap-2 overflow-y-auto text-sm leading-6 text-ink-muted">
                     {providerWarnings.map((warning, warningIndex) => (
                       <li key={`provider-warning-${warningIndex}`} className="break-words">- {warning}</li>
@@ -450,5 +450,5 @@ function createProviderWarningText(runInfo?: OutputViewerProps["runInfo"]) {
     return "All configured real providers failed or were unavailable. Ship Design used mock generation as the final fallback.";
   }
 
-  return `Ship Design used ${runInfo.finalProvider ?? runInfo.provider} after the selected real provider could not complete the request.`;
+  return `Ship Design switched providers automatically to complete your package. Final provider: ${runInfo.finalProvider ?? runInfo.provider}.`;
 }

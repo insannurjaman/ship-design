@@ -4,7 +4,6 @@ import { useMemo, useState } from "react";
 import { NewProjectForm } from "@/components/project/new-project-form";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
-import { EmptyState } from "@/components/ui/empty-state";
 import {
   litePackageOutputs,
   outputScopeHelperText,
@@ -83,10 +82,9 @@ export function NewProjectIntake() {
             </div>
 
             <div className="border border-accent-green/60 bg-accent-soft p-3">
-              <Badge tone="accent">Best for free providers</Badge>
+              <Badge tone="accent">Lite recommended</Badge>
               <p className="mt-3 text-sm leading-6 text-ink-secondary">
-                Lite package generates the core strategy, research, flows, and screen list first.
-                Full package creates all 8 artifacts and may use more quota.
+                Lite package is best for free providers and quick first drafts. Full package uses more AI calls and may trigger free provider limits.
               </p>
             </div>
 
@@ -105,22 +103,6 @@ export function NewProjectIntake() {
                 ))}
               </div>
             ) : null}
-          </CardBody>
-        </Card>
-
-        <EmptyState
-          title="No clarifying questions yet"
-          description="If the idea is too thin, Ship Design will pause here and ask for the missing inputs before running agents."
-        />
-
-        <Card className="border-status-warning/60">
-          <CardBody>
-            <Badge tone="warning">Review guardrail</Badge>
-            <h2 className="mt-4 text-lg font-semibold">Style conflict detected</h2>
-            <p className="mt-2 text-sm leading-6 text-ink-secondary">
-              If a prompt asks for conflicting visual directions, the agent flags it before Figma
-              generation.
-            </p>
           </CardBody>
         </Card>
       </aside>

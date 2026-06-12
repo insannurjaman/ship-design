@@ -79,9 +79,9 @@ Export order:
 7. Landing Page Copy
 8. Handoff Docs
 
-## Mock Figma Package Behavior
+## Manual Figma Package Behavior
 
-Prepare Figma Package remains local and mock-only.
+Prepare Manual Figma Package remains local and mock-only.
 
 The UI should keep this message visible:
 

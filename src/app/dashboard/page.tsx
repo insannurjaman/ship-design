@@ -61,7 +61,7 @@ export default function DashboardPage() {
               {[
                 ["Projects", mockUsageSummary.projectsThisMonth],
                 ["Agent runs", mockUsageSummary.agentRuns],
-                ["Figma syncs", mockUsageSummary.figmaSyncs],
+                ["Figma prep", mockUsageSummary.figmaSyncs],
                 ["Handoffs", mockUsageSummary.handoffs]
               ].map(([label, value]) => (
                 <MetricCard key={label} label={String(label)} value={value} />

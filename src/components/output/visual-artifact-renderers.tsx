@@ -103,9 +103,10 @@ function UserFlowVisual({ markdown }: { markdown: string }) {
     <div className="grid gap-5">
       <CopyActionRow
         actions={[
-          ["Copy flow as Mermaid", mermaid],
+          ["Copy Flow as Markdown", markdown],
+          ["Copy Flow as Mermaid", mermaid],
           ["Copy flow JSON", flowJson],
-          ["Copy flow SVG", svg]
+          ["Copy Flow as SVG", svg]
         ]}
       />
       <div className="grid gap-5">
@@ -119,7 +120,10 @@ function UserFlowVisual({ markdown }: { markdown: string }) {
               <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                 {flow.nodes.map((node, nodeIndex) => (
                   <div key={`flow-${flowIndex}-node-${node.id}-${nodeIndex}`} className="border border-line bg-surface-panel p-3">
-                    <p className="font-mono text-[11px] uppercase text-ink-muted">{node.id}</p>
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="font-mono text-[11px] uppercase text-ink-muted">{node.id}</p>
+                      <Badge tone="muted">Step {nodeIndex + 1}</Badge>
+                    </div>
                     <h4 className="mt-2 text-sm font-semibold text-ink-primary">{node.label}</h4>
                     <p className="mt-2 text-xs leading-5 text-ink-secondary">{node.purpose}</p>
                   </div>
@@ -157,7 +161,8 @@ function UIScreenVisual({ markdown }: { markdown: string }) {
       <CopyActionRow
         actions={[
           ["Copy screen spec", spec],
-          ["Copy as SVG", svg],
+          ["Copy screen as SVG", svg],
+          ["Copy all UI screens", markdown],
           ["Copy content", content],
           ["Copy component checklist", checklist || "- [ ] Review component needs"]
         ]}
@@ -173,7 +178,7 @@ function UIScreenVisual({ markdown }: { markdown: string }) {
               <Badge tone="accent">{screen.device}</Badge>
             </div>
             <div className="mt-4 border border-line bg-[#080A08] p-3">
-              <div className="border border-line bg-surface-panel p-3">
+              <div className={isMobileScreen(screen) ? "mx-auto max-w-[260px] border border-line bg-surface-panel p-3" : "border border-line bg-surface-panel p-3"}>
                 <p className="font-mono text-[11px] uppercase text-ink-muted">Frame preview</p>
                 <div className="mt-3 grid gap-2">
                   {screen.sections.slice(0, 5).map((section, sectionIndex) => (
@@ -210,7 +215,7 @@ function DesignSystemKitVisual({ markdown }: { markdown: string }) {
       <CopyActionRow
         actions={[
           ["Copy CSS variables", createCssVariables(payload.tokens)],
-          ["Copy token JSON", JSON.stringify(payload, null, 2)],
+          ["Copy JSON tokens", JSON.stringify(payload, null, 2)],
           ["Copy Tailwind config draft", createTailwindDraft(payload.tokens)],
           ["Copy Figma variable checklist", createFigmaVariableChecklist(payload.tokens)]
         ]}
@@ -268,6 +273,34 @@ function DesignSystemKitVisual({ markdown }: { markdown: string }) {
             ))}
           </tbody>
         </table>
+      </div>
+      <div className="overflow-x-auto border border-line bg-surface-base">
+        <table className="min-w-full text-left text-sm text-ink-secondary">
+          <thead className="bg-surface-raised">
+            <tr>
+              {["Figma variable", "Value", "Collection"].map((header) => (
+                <th key={header} className="border-b border-line px-3 py-2 font-mono text-xs uppercase text-accent-green">{header}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {payload.tokens.slice(0, 10).map((token, index) => (
+              <tr key={`figma-variable-${index}-${token.name}`} className="border-t border-line">
+                <td className="px-3 py-2 font-mono text-xs text-ink-primary">{token.name.replace(/\./g, "/")}</td>
+                <td className="px-3 py-2">{token.value}</td>
+                <td className="px-3 py-2">Ship Design / V1</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {["Button", "Input", "Card", "Status Pill"].map((component) => (
+          <div key={`component-card-${component}`} className="border border-line bg-surface-base p-4">
+            <p className="font-mono text-xs uppercase text-accent-green">{component}</p>
+            <p className="mt-2 text-sm leading-6 text-ink-secondary">Starter spec with default, hover, focus, disabled, loading, and error/review states where relevant.</p>
+          </div>
+        ))}
       </div>
       <ArtifactContentRenderer markdown={markdown} />
     </div>
@@ -628,6 +661,10 @@ function SpecRow({ label, value }: { label: string; value: string }) {
 
 function isHexColor(value: string) {
   return /^#[0-9a-f]{3,8}$/i.test(value.trim());
+}
+
+function isMobileScreen(screen: ScreenSpec) {
+  return /mobile|phone|ios|android/i.test(screen.device);
 }
 
 function slug(value: string) {
